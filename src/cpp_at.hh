@@ -7,7 +7,7 @@
 #include <vector>
 #include <cctype> // for std::isspace()
 
-class ATCommandParser {
+class CppAT {
 public:
     static const uint16_t kATCommandMaxLen = 16;
     // Initialized in .cc file.
@@ -30,9 +30,9 @@ public:
         std::function<bool(char, const std::string_view[], uint16_t)> callback = nullptr; // FUnction to call with list of arguments.
     };
 
-    ATCommandParser(); // default constructor
-    ATCommandParser(const ATCommandDef_t * at_command_list_in, uint16_t num_at_commands_in); // Constructor.
-    ~ATCommandParser(); // Destructor.
+    CppAT(); // default constructor
+    CppAT(const ATCommandDef_t * at_command_list_in, uint16_t num_at_commands_in); // Constructor.
+    ~CppAT(); // Destructor.
 
     bool SetATCommandList(const ATCommandDef_t *at_command_list_in, uint16_t num_at_commands_in);
     uint16_t GetNumATCommands();
@@ -53,6 +53,9 @@ public:
             if (*end_ptr == '\0') {
                 // NOTE: This may cause unexpected results if type is unsigned but parsed value is signed!
                 number = static_cast<T>(parsed_int);
+                if (number != parsed_int) {
+                    return false; // Something weird happened, maybe trying to put a signed number into an unsigned value?
+                }
                 return true;
             }
             // else: There are numbers or text after the decimal, try parsing float.

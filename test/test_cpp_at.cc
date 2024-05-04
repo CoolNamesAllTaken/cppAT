@@ -1,5 +1,5 @@
 #include "gtest/gtest.h"
-#include "at_command_parser.hh"
+#include "cpp_at.hh"
 #include <string_view>
 
 bool callback1_was_called = false;
@@ -15,8 +15,8 @@ bool Callback2(char op, const std::string_view args[], uint16_t num_args) {
     return true;
 }
 
-TEST(ATCommandParser, SingleATCommand) {
-    ATCommandParser::ATCommandDef_t at_command_list[] = {
+TEST(CppAT, SingleATCommand) {
+    CppAT::ATCommandDef_t at_command_list[] = {
         {
             .command = "+TEST",
             .min_args = 0,
@@ -25,14 +25,14 @@ TEST(ATCommandParser, SingleATCommand) {
             .callback = Callback1
         }
     };
-    ATCommandParser parser = ATCommandParser(at_command_list, sizeof(at_command_list)/sizeof(at_command_list[0]));
+    CppAT parser = CppAT(at_command_list, sizeof(at_command_list)/sizeof(at_command_list[0]));
     ASSERT_EQ(parser.GetNumATCommands(), 2); // HELP command automatically added.
     
     // Looking up a fake command should fail.
     ASSERT_TRUE(parser.LookupATCommand("+Blah") == nullptr);
 
     // Looking up a real command should work.
-    ATCommandParser::ATCommandDef_t * returned_command = parser.LookupATCommand("+TEST");
+    CppAT::ATCommandDef_t * returned_command = parser.LookupATCommand("+TEST");
     ASSERT_NE(returned_command, nullptr);
     ASSERT_TRUE(returned_command->command.compare("+TEST") == 0);
     callback1_was_called = false;
@@ -43,9 +43,9 @@ TEST(ATCommandParser, SingleATCommand) {
     ASSERT_TRUE(returned_command->help_string.compare("This is a test.") == 0);
 }
 
-ATCommandParser BuildExampleParser1() {
+CppAT BuildExampleParser1() {
     uint16_t num_at_commands = 2;
-    ATCommandParser::ATCommandDef_t at_command_list[] = {
+    CppAT::ATCommandDef_t at_command_list[] = {
         {
             .command = "+TEST",
             .min_args = 0,
@@ -61,17 +61,17 @@ ATCommandParser BuildExampleParser1() {
             .callback = Callback2
         }
     };
-    return ATCommandParser(at_command_list, num_at_commands);
+    return CppAT(at_command_list, num_at_commands);
 }
 
-TEST(ATCommandParser, HelpString) {
-    ATCommandParser parser = BuildExampleParser1();
+TEST(CppAT, HelpString) {
+    CppAT parser = BuildExampleParser1();
     ASSERT_TRUE(parser.ParseMessage("AT+HELP\r\n"));
     // This test doesn't do anything other than make sure it doesn't crash when calling the callbacks in AT+HELP.
 }
 
-TEST(ATCommandParser, TwoATCommands) {
-    ATCommandParser parser = BuildExampleParser1();
+TEST(CppAT, TwoATCommands) {
+    CppAT parser = BuildExampleParser1();
     ASSERT_TRUE(parser.is_valid);
     ASSERT_EQ(parser.GetNumATCommands(), 3);
 
@@ -79,7 +79,7 @@ TEST(ATCommandParser, TwoATCommands) {
     ASSERT_TRUE(parser.LookupATCommand("+Potatoes") == nullptr);
 
     // Looking up real command 1 should work.
-    ATCommandParser::ATCommandDef_t * returned_command = parser.LookupATCommand("+TEST");
+    CppAT::ATCommandDef_t * returned_command = parser.LookupATCommand("+TEST");
     ASSERT_NE(returned_command, nullptr);
     ASSERT_TRUE(returned_command->command.compare("+TEST") == 0);
     callback1_was_called = false;
@@ -101,15 +101,15 @@ TEST(ATCommandParser, TwoATCommands) {
     ASSERT_TRUE(returned_command->help_string.compare("Configuration. Takes between 1 and 3 arguments.") == 0);
 }
 
-TEST(ATCommandParser, RejectMessageWithNoAT) {
-    ATCommandParser parser = BuildExampleParser1();
+TEST(CppAT, RejectMessageWithNoAT) {
+    CppAT parser = BuildExampleParser1();
 
     ASSERT_FALSE(parser.ParseMessage("Potatoes potatoes potatoes I love potatoes."));
     ASSERT_FALSE(parser.ParseMessage("A T just kidding."));
 }
 
-TEST(ATCommandParser, RejectMessageWithZeroLengthCommand) {
-    ATCommandParser parser = BuildExampleParser1();
+TEST(CppAT, RejectMessageWithZeroLengthCommand) {
+    CppAT parser = BuildExampleParser1();
 
     ASSERT_FALSE(parser.ParseMessage("AT+ other words"));
     ASSERT_FALSE(parser.ParseMessage("AT+,other words"));
@@ -117,22 +117,22 @@ TEST(ATCommandParser, RejectMessageWithZeroLengthCommand) {
     ASSERT_FALSE(parser.ParseMessage("AT+\n"));
 }
 
-TEST(ATCommandParser, RejectMessageWithCommandTooLong) {
+TEST(CppAT, RejectMessageWithCommandTooLong) {
     // Build a parser that contains a command that is too long.
-    ATCommandParser::ATCommandDef_t at_command_list[] = {
+    CppAT::ATCommandDef_t at_command_list[] = {
         {
             .command = "+HIHIHIHIHIHIHIHIHIHITOOLONG"
         }
     };
-    ATCommandParser parser = ATCommandParser(at_command_list, sizeof(at_command_list)/sizeof(at_command_list[0]));
+    CppAT parser = CppAT(at_command_list, sizeof(at_command_list)/sizeof(at_command_list[0]));
     ASSERT_FALSE(parser.is_valid);
 
     ASSERT_FALSE(parser.ParseMessage("AT+HIHIHIHIHIHIHIHIHIHITOOLONG"));
 }
 
-TEST(ATCommandParser, FailToInitWithHelpStringTooLong) {
+TEST(CppAT, FailToInitWithHelpStringTooLong) {
     // Build a parser that contains a command that is too long.
-    ATCommandParser::ATCommandDef_t at_command_list[] = {
+    CppAT::ATCommandDef_t at_command_list[] = {
         {
             .help_string = "NARRATOR:"
                 "(Black screen with text; The sound of buzzing bees can be heard)"
@@ -230,19 +230,19 @@ TEST(ATCommandParser, FailToInitWithHelpStringTooLong) {
                 "a day and hitchhiked around the hive."
         }
     };
-    ATCommandParser parser = ATCommandParser(at_command_list, sizeof(at_command_list)/sizeof(at_command_list[0]));
+    CppAT parser = CppAT(at_command_list, sizeof(at_command_list)/sizeof(at_command_list[0]));
     ASSERT_FALSE(parser.is_valid);
 }
 
-TEST(ATCommandParser, RejectMessageWithNoMatchingATCommand) {
-    ATCommandParser parser = BuildExampleParser1();
+TEST(CppAT, RejectMessageWithNoMatchingATCommand) {
+    CppAT parser = BuildExampleParser1();
 
     ASSERT_FALSE(parser.ParseMessage("AT+WRONG"));
     ASSERT_FALSE(parser.ParseMessage("AT+\r\n"));
 }
 
-TEST(ATCommandParser, RejectMessageWithIncorrectNumberOfArgs) {
-    ATCommandParser parser = BuildExampleParser1();
+TEST(CppAT, RejectMessageWithIncorrectNumberOfArgs) {
+    CppAT parser = BuildExampleParser1();
 
     // AT+TEST takes between 0-1 args.
     ASSERT_FALSE(parser.ParseMessage("AT+TEST=a,b")); // two args
@@ -264,8 +264,8 @@ bool MustBePotatoBacon(char op, const std::string_view args[], uint16_t num_args
     return false;
 }
 
-ATCommandParser BuildPotatoBaconParser() {
-    ATCommandParser::ATCommandDef_t at_command_list[] =  {
+CppAT BuildPotatoBaconParser() {
+    CppAT::ATCommandDef_t at_command_list[] =  {
         {
             .command = "+POTATOBACON",
             .min_args = 1,
@@ -274,11 +274,11 @@ ATCommandParser BuildPotatoBaconParser() {
             .callback = MustBePotatoBacon
         }
     };
-    return ATCommandParser(at_command_list, sizeof(at_command_list)/sizeof(at_command_list[0]));
+    return CppAT(at_command_list, sizeof(at_command_list)/sizeof(at_command_list[0]));
 }
 
-TEST(ATCommandParser, TwoArgsPotatoBacon) {
-    ATCommandParser parser = BuildPotatoBaconParser();
+TEST(CppAT, TwoArgsPotatoBacon) {
+    CppAT parser = BuildPotatoBaconParser();
     ASSERT_TRUE(parser.ParseMessage("AT+POTATOBACON=potato"));
     ASSERT_FALSE(parser.ParseMessage("AT+POTATOBACON=bacon"));
     ASSERT_TRUE(parser.ParseMessage("AT+POTATOBACON=potato,bacon"));
@@ -292,8 +292,8 @@ bool PickyOpCallback(char op, const std::string_view args[], uint16_t num_args) 
     return false;
 }
 
-TEST(ATCommandParser, PickyOpCallback) {
-    ATCommandParser::ATCommandDef_t at_command_list[] = {
+TEST(CppAT, PickyOpCallback) {
+    CppAT::ATCommandDef_t at_command_list[] = {
         {
             .command = "+PICKYOP",
             .min_args = 0,
@@ -302,7 +302,7 @@ TEST(ATCommandParser, PickyOpCallback) {
             .callback = PickyOpCallback
         }
     };
-    ATCommandParser parser = ATCommandParser(at_command_list, sizeof(at_command_list)/sizeof(at_command_list[0]));
+    CppAT parser = CppAT(at_command_list, sizeof(at_command_list)/sizeof(at_command_list[0]));
     ASSERT_FALSE(parser.ParseMessage("AT+PICKYOP=doot\r\n"));
     ASSERT_TRUE(parser.ParseMessage("AT+PICKYOP doot\r\n"));
     ASSERT_TRUE(parser.ParseMessage("AT+PICKYOP?\r\n"));
@@ -320,8 +320,8 @@ bool StoreArgsCallback(char op, const std::string_view args[], uint16_t num_args
     return true;
 }
 
-ATCommandParser BuildStoreArgParser() {
-    ATCommandParser::ATCommandDef_t at_command_list[] = {
+CppAT BuildStoreArgParser() {
+    CppAT::ATCommandDef_t at_command_list[] = {
         {
             .command = "+STORE",
             .min_args = 0,
@@ -330,11 +330,11 @@ ATCommandParser BuildStoreArgParser() {
             .callback = StoreArgsCallback
         }
     };
-    return ATCommandParser(at_command_list, sizeof(at_command_list)/sizeof(at_command_list[0]));
+    return CppAT(at_command_list, sizeof(at_command_list)/sizeof(at_command_list[0]));
 }
 
-TEST(ATCommandParser, StoreArgsWithoutReturns) {
-    ATCommandParser parser = BuildStoreArgParser();
+TEST(CppAT, StoreArgsWithoutReturns) {
+    CppAT parser = BuildStoreArgParser();
     
     // No Args
     parser.ParseMessage("AT+STORE\r\n");
@@ -365,8 +365,8 @@ TEST(ATCommandParser, StoreArgsWithoutReturns) {
     ASSERT_EQ(stored_args[0].compare("hello"), 0);
 }
 
-TEST(ATCommandParser, AllowBlankArgs) {
-    ATCommandParser parser = BuildStoreArgParser();
+TEST(CppAT, AllowBlankArgs) {
+    CppAT parser = BuildStoreArgParser();
 
     parser.ParseMessage("AT+STORE=,,5,");
     ASSERT_EQ(stored_args.size(), (size_t)4);
@@ -374,4 +374,77 @@ TEST(ATCommandParser, AllowBlankArgs) {
     ASSERT_STREQ(stored_args[1].data(), "");
     ASSERT_STREQ(stored_args[2].data(), "5");
     ASSERT_STREQ(stored_args[3].data(), "");
+}
+
+static constexpr float kFloatCloseEnough = 0.00001f;
+TEST(CppAT, ArgToNumFloat) {
+    // Test float.
+    float num = 0.0f;
+    ASSERT_TRUE(CppAT::ArgToNum(std::string_view("5.73"), num));
+    ASSERT_NEAR(num, 5.73f, kFloatCloseEnough);
+
+    // Test float with crap afterwards. ArgToNum should barf!
+    ASSERT_FALSE(CppAT::ArgToNum(std::string_view("6.94asgag"), num));
+
+    // Test float with crap beforehands. ArgToNum should barf!
+    ASSERT_FALSE(CppAT::ArgToNum(std::string_view("asgarhg6.94"), num));
+
+    // Test blank float. ArgToNum should barf!
+    ASSERT_FALSE(CppAT::ArgToNum(std::string_view(""), num));
+}
+
+TEST(CppAT, ArgToNumInt) {
+    // Test positive and negative integers.
+    int num = 0;
+    ASSERT_TRUE(CppAT::ArgToNum(std::string_view("1234"), num));
+    ASSERT_EQ(num, 1234);
+    ASSERT_TRUE(CppAT::ArgToNum(std::string_view("-1234"), num));
+    ASSERT_EQ(num, -1234);
+
+    // Test int with crap afterwards. ArgToNum should barf!
+    ASSERT_FALSE(CppAT::ArgToNum(std::string_view("1234hihi"), num));
+
+    // Test int with crap beforehands. ArgToNum should barf!
+    ASSERT_FALSE(CppAT::ArgToNum(std::string_view("hyello1234"), num));
+}
+
+TEST(CppAT, ArgToNumUint16_t) {
+    uint16_t num = 0;
+    // Test nominal positive value for uint16_t.
+    ASSERT_TRUE(CppAT::ArgToNum(std::string_view("1234"), num));
+    ASSERT_EQ(num, 1234);
+    // Negative integer should fail to get put into a uint16_t.
+    ASSERT_FALSE(CppAT::ArgToNum(std::string_view("-1234"), num));
+
+    // Test uint16_t with crap afterwards. ArgToNum should barf!
+    ASSERT_FALSE(CppAT::ArgToNum(std::string_view("1234hihi"), num));
+
+    // Test uint16_t with crap beforehands. ArgToNum should barf!
+    ASSERT_FALSE(CppAT::ArgToNum(std::string_view("hyello1234"), num));
+
+    // Test overflow (one larger than UINT16_T_MAX).
+    ASSERT_FALSE(CppAT::ArgToNum(std::string_view("65536"), num));
+
+    // Test Base 16
+    ASSERT_TRUE(CppAT::ArgToNum(std::string_view("BEEF"), num, 16));
+    ASSERT_EQ(num, 0xBEEF);
+}
+
+TEST(CppAT, ArgToNumUint32_t) {
+    uint32_t num = 0;
+    // Test nominal positive value for uint16_t.
+    ASSERT_TRUE(CppAT::ArgToNum(std::string_view("1234567"), num));
+    ASSERT_EQ(num, 1234567);
+    // Negative integer should work since its overflow value fits into a uint32_t.
+    ASSERT_TRUE(CppAT::ArgToNum(std::string_view("-1234"), num));
+
+    // Test uint16_t with crap afterwards. ArgToNum should barf!
+    ASSERT_FALSE(CppAT::ArgToNum(std::string_view("1234hihi"), num));
+
+    // Test uint16_t with crap beforehands. ArgToNum should barf!
+    ASSERT_FALSE(CppAT::ArgToNum(std::string_view("hyello1234"), num));
+
+    // Test Base 16
+    ASSERT_TRUE(CppAT::ArgToNum(std::string_view("DEADBEEF"), num, 16));
+    ASSERT_EQ(num, 0xDEADBEEF);
 }
