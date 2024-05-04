@@ -219,17 +219,6 @@ bool ATCommandParser::ParseMessage(std::string_view message) {
             num_args++;
             arg_start = arg_end+1;
         } while(arg_end != npos);
-        // Cover the trailing empty argument special case.
-        // if (args_string[args_string.length()-1] == ',') {
-        //     if (num_args >= kMaxNumArgs) {
-        //         printf("ATCommandParser::ParseMessage: Too many arguments.\r\n");
-        //         return false;
-        //     }
-        //     uint16_t arg_str_buf_start = num_args*(kArgMaxLen+1);
-        //     args_str_buf_list[num_args][0] = '\0';
-        //     args_list[num_args] = std::string_view(args_str_buf_list[num_args]);
-        //     num_args++;
-        // }
         
         if ((num_args < def->min_args) || (num_args > def->max_args)) {
             printf("ATCommandParser::ParseMessage: Received incorrect number of args for command %.*s: got %d, expected minimum %d, maximum %d.\r\n",
