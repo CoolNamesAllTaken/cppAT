@@ -31,12 +31,63 @@ public:
     };
 
     CppAT(); // default constructor
-    CppAT(const ATCommandDef_t * at_command_list_in, uint16_t num_at_commands_in); // Constructor.
-    ~CppAT(); // Destructor.
 
-    bool SetATCommandList(const ATCommandDef_t *at_command_list_in, uint16_t num_at_commands_in);
+    /**
+     * @brief Constructor.
+     * @param[in] at_command_list_in Array of ATCommandDef_t's that define what AT commands are supported
+     * as well as their corresponding callback functions.
+     * @param[in] num_at_comands_in Length of at_command_list_in.
+     * @param[in] at_command_list_is_static Optional boolean indicating whether the at_command_list is statically
+     * allocated and can be used directly, or whether new space needs to be allocated for it in dynamic memory. NOTE: An
+     * AT+HELP function will not be automatically generated if this is set to true.
+     * @retval Your shiny new CppAT object.
+    */
+    CppAT(
+        const ATCommandDef_t * at_command_list_in, 
+        uint16_t num_at_commands_in, 
+        bool at_command_list_is_static = false
+    ); // Constructor.
+
+    /**
+     * @brief Destructor. Deallocates dynamically allocated memory.
+    */
+    ~CppAT();
+
+    /**
+     * @brief Helper function that clears existing AT commands and populates with a new list of AT Command definitions.
+     * Adds a definition for AT+HELP.
+     * @param[in] at_command_list_in Array of ATCommandDef_t's that define what AT commands are supported
+     * as well as their corresponding callback functions.
+     * @param[in] num_at_commands Number of elements in at_command_list_in array.
+     * @param[in] at_command_list_is_static Optional boolean indicating whether at_command_list can be referenced in
+     * place. If not, memory will be dynamically allocated to store the contents of at_command_list.
+     * @retval True if set successfully, false if failed.
+    */
+    bool SetATCommandList(
+        const ATCommandDef_t *at_command_list_in, 
+        uint16_t num_at_commands_in, 
+        bool at_command_list_is_static=false
+    );
+
+    /**
+     * @brief Returns the number of supported AT commands, not counting the auto-generated AT+HELP command.
+     * @retval Size of at_command_list_.
+    */
     uint16_t GetNumATCommands();
-    ATCommandDef_t * LookupATCommand(std::string_view command);
+
+    /**
+     * @brief Returns a pointer to the first ATCommandDef_t object that matches the text command provided.
+     * @param[in] command String containing command text to look for.
+     * @retval Pointer to corresponding ATCommandDef_t within the at_command_list_, or nullptr if not found.
+    */
+    const ATCommandDef_t * LookupATCommand(std::string_view command);
+
+    /**
+     * @brief Parses a message to find the AT command, match it with the relevant ATCommandDef_t, parse
+     * out the arguments and execute the corresponding callback function.
+     * @param[in] std::string_view containing text to parse.
+     * @retval True if parsing successful, false otherwise.
+    */
     bool ParseMessage(std::string_view message);
 
     bool is_valid = false;
@@ -72,7 +123,10 @@ public:
     }
 
 private:
-    ATCommandDef_t * at_command_list_;
+    // Non readonly handle for at_command_list_ used when it is dynamically allocated into memory.
+    ATCommandDef_t * at_command_list_ = nullptr;
+    // Readonly handle for at_command_list_ used everywhere except where it is set.
+    const ATCommandDef_t * at_command_list_ro_ = nullptr;
     uint16_t num_at_commands_;
 
     bool ATHelpCallback(char op, const std::string_view args[], uint16_t num_args);

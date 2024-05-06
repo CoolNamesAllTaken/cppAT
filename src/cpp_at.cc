@@ -18,28 +18,33 @@ const size_t npos = -1; // Since string_view doesn't have it. Used to represent 
 
 CppAT::CppAT() {}
 
-/**
- * @brief Constructor.
- * @param[in] at_command_list_in Array of ATCommandDef_t's that define what AT commands are supported
- * as well as their corresponding callback functions.
- * @param[in] num_at_comands_in Length of at_command_list_in.
-*/
-CppAT::CppAT(const ATCommandDef_t * at_command_list_in, uint16_t num_at_commands_in)
+CppAT::CppAT(const ATCommandDef_t * at_command_list_in, uint16_t num_at_commands_in, bool at_command_list_is_static)
 {
-    is_valid = SetATCommandList(at_command_list_in, num_at_commands_in);
+    is_valid = SetATCommandList(at_command_list_in, num_at_commands_in, at_command_list_is_static);
 }
 
-/**
- * @brief Helper function that clears existing AT commands and populates with a new list of AT Command
- * definitions. Adds a definition for AT+HELP.
- * @param[in] at_command_list_in Array of ATCommandDef_t's that define what AT commands are supported
- * as well as their corresponding callback functions.
- * @param[in] num_at_commands Number of elements in at_command_list_in array.
- * @retval True if set successfully, false if failed.
-*/
-bool CppAT::SetATCommandList(const ATCommandDef_t *at_command_list_in, uint16_t num_at_commands_in) {
+bool CppAT::SetATCommandList(
+    const ATCommandDef_t *at_command_list_in, 
+    uint16_t num_at_commands_in,
+    bool at_command_list_is_static
+) {
     // Allocate space for the AT commands, with an extra slot for HELP at the end.
     num_at_commands_ = num_at_commands_in + 1;
+
+    if (at_command_list_ != nullptr) {
+        // There was already a list of AT commands allocated; deallocate it to avoid a memory leak.
+        delete [] at_command_list_;
+        at_command_list_ = nullptr;
+    }
+
+    // Setting AT command list from static list.
+    if (at_command_list_is_static) {
+        // AT commands being passed in will stick around, use them instead of allocating new memory.
+        at_command_list_ro_ = at_command_list_in;
+        return true;
+    }
+
+    // Setting AT command list in dynamically allocated memory.
     at_command_list_ = new ATCommandDef_t[num_at_commands_];
     if (at_command_list_ == nullptr) {
         printf("CppAT::SetATCommandList: Dynamic memory allocation failed.\r\n");
@@ -102,35 +107,27 @@ bool CppAT::SetATCommandList(const ATCommandDef_t *at_command_list_in, uint16_t 
         at_command_list_[i].help_string = std::string_view(at_command_list_[i].help_string_buf);
     }
 
+    at_command_list_ro_ = at_command_list_;
     return true;
 }
 
-/**
- * @brief Destructor. Deallocates dynamically allocated memory.
-*/
 CppAT::~CppAT() {
-    delete [] at_command_list_;
+    if (at_command_list_ != nullptr) {
+        delete [] at_command_list_;
+    }
+    at_command_list_ro_ = nullptr;
 }
 
-/**
- * @brief Returns the number of supported AT commands, not counting the auto-generated AT+HELP command.
- * @retval Size of at_command_list_.
-*/
 uint16_t CppAT::GetNumATCommands() {
     return num_at_commands_; // Remove auto-generated help command from count.
 }
 
-/**
- * @brief Returns a pointer to the first ATCommandDef_t object that matches the text command provided.
- * @param[in] command String containing command text to look for.
- * @retval Pointer to corresponding ATCommandDef_t within the at_command_list_, or nullptr if not found.
-*/
-CppAT::ATCommandDef_t * CppAT::LookupATCommand(std::string_view command) {
+const CppAT::ATCommandDef_t * CppAT::LookupATCommand(std::string_view command) {
     if (command.length() > kATCommandMaxLen) {
         return nullptr; // Command is too long, not supported.
     }
     for (uint16_t i = 0; i < num_at_commands_; i++) {
-        ATCommandDef_t &def = at_command_list_[i];
+        const ATCommandDef_t &def = at_command_list_ro_[i];
         if (command.compare(0, kATCommandMaxLen, def.command) == 0) {
             return &def;
         }
@@ -138,10 +135,6 @@ CppAT::ATCommandDef_t * CppAT::LookupATCommand(std::string_view command) {
     return nullptr;
 }
 
-/**
- * @brief Parses a message to find the AT command, match it with the relevant ATCommandDef_t, parse
- * out the arguments and execute the corresponding callback function.
-*/
 bool CppAT::ParseMessage(std::string_view message) {
     // Message should start with "AT"
     std::size_t start = message.find(kATPrefix);
@@ -164,7 +157,7 @@ bool CppAT::ParseMessage(std::string_view message) {
             return false;
         }
         // Try matching the command text with an AT command definition.
-        ATCommandDef_t * def = LookupATCommand(command);
+        const ATCommandDef_t * def = LookupATCommand(command);
         if (def == nullptr) {
             printf("CppAT::ParseMessage: Unable to match AT command %.*s.\r\n", 
                 command.length(), command.data());
@@ -251,7 +244,7 @@ bool CppAT::ParseMessage(std::string_view message) {
 bool CppAT::ATHelpCallback(char op, const std::string_view args[], uint16_t num_args) {
     printf("AT Command Help Menu:\r\n");
     for (uint16_t i = 0; i < num_at_commands_; i++) {
-        ATCommandDef_t at_command = at_command_list_[i];
+        ATCommandDef_t at_command = at_command_list_ro_[i];
         printf("%.*s: \r\n", at_command.command.length(), at_command.command.data());
         printf("\t%.*s\r\n", at_command.help_string.length(), at_command.help_string.data());
     }

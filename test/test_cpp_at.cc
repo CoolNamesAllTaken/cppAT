@@ -32,7 +32,7 @@ TEST(CppAT, SingleATCommand) {
     ASSERT_TRUE(parser.LookupATCommand("+Blah") == nullptr);
 
     // Looking up a real command should work.
-    CppAT::ATCommandDef_t * returned_command = parser.LookupATCommand("+TEST");
+    const CppAT::ATCommandDef_t * returned_command = parser.LookupATCommand("+TEST");
     ASSERT_NE(returned_command, nullptr);
     ASSERT_TRUE(returned_command->command.compare("+TEST") == 0);
     callback1_was_called = false;
@@ -79,7 +79,7 @@ TEST(CppAT, TwoATCommands) {
     ASSERT_TRUE(parser.LookupATCommand("+Potatoes") == nullptr);
 
     // Looking up real command 1 should work.
-    CppAT::ATCommandDef_t * returned_command = parser.LookupATCommand("+TEST");
+    const CppAT::ATCommandDef_t * returned_command = parser.LookupATCommand("+TEST");
     ASSERT_NE(returned_command, nullptr);
     ASSERT_TRUE(returned_command->command.compare("+TEST") == 0);
     callback1_was_called = false;
@@ -434,7 +434,7 @@ TEST(CppAT, ArgToNumUint32_t) {
     uint32_t num = 0;
     // Test nominal positive value for uint16_t.
     ASSERT_TRUE(CppAT::ArgToNum(std::string_view("1234567"), num));
-    ASSERT_EQ(num, 1234567);
+    ASSERT_EQ(num, (uint32_t)1234567);
     // Negative integer should work since its overflow value fits into a uint32_t.
     ASSERT_TRUE(CppAT::ArgToNum(std::string_view("-1234"), num));
 
@@ -447,4 +447,41 @@ TEST(CppAT, ArgToNumUint32_t) {
     // Test Base 16
     ASSERT_TRUE(CppAT::ArgToNum(std::string_view("DEADBEEF"), num, 16));
     ASSERT_EQ(num, 0xDEADBEEF);
+}
+
+bool test1callback_called = false;
+bool Test1Callback(char op, const std::string_view args[], uint16_t num_args) {
+    test1callback_called = true;
+    return true;
+}
+
+static const CppAT::ATCommandDef_t const_at_command_list[] = {
+    {
+        .command_buf = "+TEST1",
+        .min_args = 0,
+        .max_args = 2,
+        .help_string_buf = "Doot doot help string.",
+        .callback = &Test1Callback
+    },
+    {
+        .command_buf = "+TEST2",
+        .min_args = 1,
+        .help_string_buf = "TEST2 help string."
+    }
+};
+TEST(CppAT, ConstATCommandList) {
+    CppAT parser = CppAT(const_at_command_list, 2, true);
+    const CppAT::ATCommandDef_t * command = parser.LookupATCommand("+TEST1");
+    ASSERT_NE(command, nullptr);
+    ASSERT_EQ(command->help_string.compare("Doot doot help string."), 0);
+    ASSERT_EQ(command->command.compare("+TEST1"), 0);
+    test1callback_called = false;
+    ASSERT_TRUE(parser.ParseMessage("AT+TEST1=arg1,arg2"));
+    ASSERT_TRUE(test1callback_called);
+
+    command = parser.LookupATCommand("+TEST2");
+    ASSERT_NE(command, nullptr);
+    ASSERT_EQ(command->help_string.compare("TEST2 help string."), 0);
+    ASSERT_EQ(command->command.compare("+TEST2"), 0);
+    ASSERT_FALSE(parser.ParseMessage("AT+TEST2?"));
 }
