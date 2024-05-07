@@ -163,9 +163,14 @@ bool CppAT::ParseMessage(std::string_view message) {
                 // Don't record line returns as op to make downstream stuff simpler.
                 op = message[start];
             }
-            // Ignore all non alphanumeric characters after the op character. This skips the trailing
-            // \n if the op is something like "\r\n". Don't ignore commas which might delimit blank args.
-            while (start < message.length() && !isalnum(message[start]) && message[start] != ',') {
+            // Ignore everything we don't want to consider as an argument after the op character. This skips up past the
+            // trailing \n if the op is something like "\r\n".
+            while (
+                start < message.length() && // Don't fall off the end of the message.
+                !isalnum(message[start]) && // Don't remove text or numbers, which are legitimate arguments.
+                message[start] != kArgDelimiter && // Don't ignore commas which might delimit blank args.
+                message[start] != '-' // Don't accidentally remove signs!
+            ) {
                 start += 1;
             }
         }

@@ -461,6 +461,16 @@ TEST(CppAT, ArgToNumUint32_t) {
     ASSERT_EQ(num, 0xDEADBEEF);
 }
 
+TEST(CppAT, StoreNegativeArgs) {
+    CppAT parser = BuildStoreArgParser();
+    
+    // Question mark without newline.
+    parser.ParseMessage("AT+STORE=-53");
+    ASSERT_EQ(stored_args.size(), 1u);
+    ASSERT_EQ(stored_op, '=');
+    ASSERT_EQ(stored_args[0].compare("-53"), 0);
+}
+
 bool test1callback_called = false;
 bool Test1Callback(char op, const std::string_view args[], uint16_t num_args) {
     test1callback_called = true;
