@@ -46,7 +46,7 @@ bool CppAT::SetATCommandList(
     // Setting AT command list in dynamically allocated memory.
     at_command_list_ = new ATCommandDef_t[num_at_commands_];
     if (at_command_list_ == nullptr) {
-        printf("CppAT::SetATCommandList: Dynamic memory allocation failed.\r\n");
+        cpp_at_printf("CppAT::SetATCommandList: Dynamic memory allocation failed.\r\n");
         return false;
     }
     // Copy in AT commands provided to SetATCommandList.
@@ -60,7 +60,7 @@ bool CppAT::SetATCommandList(
     // references when stuff goes out of scope after initialization.
     for (uint16_t i = 0; i < num_at_commands_; i++) { // Don't do this for help command.
         if (at_command_list_[i].command.length() > kATCommandMaxLen) {
-            printf(
+            cpp_at_printf(
                 "CppAT::SetATCommandList: AT Command String for CommandDef %d exceeds maximum length %d.\r\n",
                 i, kATCommandMaxLen
             );
@@ -77,7 +77,7 @@ bool CppAT::SetATCommandList(
         at_command_list_[i].command = std::string_view(at_command_list_[i].command_buf);
 
         if (at_command_list_[i].help_string.length() > kHelpStringMaxLen) {
-            printf(
+            cpp_at_printf(
                 "CppAT::SetATCommandList: Help String for CommandDef %d exceeds maximum length %d.\r\n",
                 i, kHelpStringMaxLen
             );
@@ -129,7 +129,7 @@ bool CppAT::ParseMessage(std::string_view message) {
     // Message should start with "AT"
     std::size_t start = message.find(kATPrefix);
     if (start == std::string::npos) {
-        printf("CppAT::ParseMessage: Unable to find AT prefix in string %.*s.\r\n", 
+        cpp_at_printf("CppAT::ParseMessage: Unable to find AT prefix in string %.*s.\r\n", 
             message.length(), message.data());
         return false;
     }
@@ -142,14 +142,14 @@ bool CppAT::ParseMessage(std::string_view message) {
         std::string_view command = message.substr(
             start, command_end == std::string::npos ? std::string::npos : command_end - start);
         if (command.length() == 0) {
-            printf("CppAT::ParseMessage: Can't parse 0 length command in string %.*s.\r\n", 
+            cpp_at_printf("CppAT::ParseMessage: Can't parse 0 length command in string %.*s.\r\n", 
                 message.length(), message.data());
             return false;
         }
         // Try matching the command text with an AT command definition.
         const ATCommandDef_t * def = LookupATCommand(command);
         if (def == nullptr) {
-            printf("CppAT::ParseMessage: Unable to match AT command %.*s.\r\n", 
+            cpp_at_printf("CppAT::ParseMessage: Unable to match AT command %.*s.\r\n", 
                 command.length(), command.data());
             return false;
         }
@@ -181,7 +181,7 @@ bool CppAT::ParseMessage(std::string_view message) {
         do {
             arg_end = args_string.find(kArgDelimiter, arg_start);
             if (num_args >= kMaxNumArgs) {
-                printf("CppAT::ParseMessage: Too many arguments.\r\n");
+                cpp_at_printf("CppAT::ParseMessage: Too many arguments.\r\n");
                 return false;
             }
             uint16_t arg_len = arg_end == npos ? args_string.length() - arg_start : arg_end-arg_start;
@@ -204,19 +204,19 @@ bool CppAT::ParseMessage(std::string_view message) {
         } while(arg_end != npos);
         
         if ((num_args < def->min_args) || (num_args > def->max_args)) {
-            printf("CppAT::ParseMessage: Received incorrect number of args for command %.*s: got %d, expected minimum %d, maximum %d.\r\n",
+            cpp_at_printf("CppAT::ParseMessage: Received incorrect number of args for command %.*s: got %d, expected minimum %d, maximum %d.\r\n",
                 command.length(), command.data(), num_args, def->min_args, def->max_args);
             return false;
         }
         if (def->callback) {
             bool result = def->callback(op, args_list, num_args);
             if (!result) {
-                printf("CppAT::ParseMessage: Call to AT Command %.*s with op '%c' and args %.*s failed.\r\n", 
+                cpp_at_printf("CppAT::ParseMessage: Call to AT Command %.*s with op '%c' and args %.*s failed.\r\n", 
                 command.length(), command.data(), op, args_string.length(), args_string.data());
                 return false;
             }
         } else {
-            printf("CppAT::ParseMessage: Received a call to AT command %.*s with no corresponding callback function.\r\n", 
+            cpp_at_printf("CppAT::ParseMessage: Received a call to AT command %.*s with no corresponding callback function.\r\n", 
             command.length(), command.data());
         }
 
@@ -232,11 +232,11 @@ bool CppAT::ParseMessage(std::string_view message) {
 */
 
 bool CppAT::ATHelpCallback(char op, const std::string_view args[], uint16_t num_args) {
-    printf("AT Command Help Menu:\r\n");
+    cpp_at_printf("AT Command Help Menu:\r\n");
     for (uint16_t i = 0; i < num_at_commands_; i++) {
         ATCommandDef_t at_command = at_command_list_ro_[i];
-        printf("%.*s: \r\n", at_command.command.length(), at_command.command.data());
-        printf("\t%.*s\r\n", at_command.help_string.length(), at_command.help_string.data());
+        cpp_at_printf("%.*s: \r\n", at_command.command.length(), at_command.command.data());
+        cpp_at_printf("\t%.*s\r\n", at_command.help_string.length(), at_command.help_string.data());
     }
     return true;
 }

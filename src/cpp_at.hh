@@ -144,6 +144,8 @@ public:
         )
     };
 
+    int cpp_at_printf(const char* format, ...);
+
 private:
     // Non readonly handle for at_command_list_ used when it is dynamically allocated into memory.
     ATCommandDef_t * at_command_list_ = nullptr;

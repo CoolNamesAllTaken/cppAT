@@ -2,6 +2,18 @@
 #include "cpp_at.hh"
 #include <string_view>
 
+// For mapping cpp_at_printf
+#include <cstdarg>
+#include <cstdio>
+
+int CppAT::cpp_at_printf(const char* format, ...) {
+    va_list args;
+    va_start(args, format);
+    int res = vprintf(format, args);
+    va_end(args);
+    return res;
+}
+
 bool callback1_was_called = false;
 bool callback2_was_called = false;
 
