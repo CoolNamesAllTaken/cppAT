@@ -92,6 +92,13 @@ public:
 
     bool is_valid = false;
 
+    /**
+     * @brief Turns a string_view argument into a float or int / unsigned int.
+     * @param[in] arg string_view containing the value to parse.
+     * @param[out] number Reference to a uint, int, or float to write the value into.
+     * @param[in] base Optional argument indicating the base to use when parsing. Defaults to 10 (decimal).
+     * @retval True if parsing was successful, false otherwise.
+    */
     template<typename T>
     static inline bool ArgToNum(const std::string_view arg, T &number, uint16_t base = 10) {
         char *end_ptr;
@@ -122,14 +129,27 @@ public:
         return false; // Failed to parse.
     }
 
+    bool ATHelpCallback(char op, const std::string_view args[], uint16_t num_args);
+    const ATCommandDef_t at_help_command = {
+        .command_buf = "+HELP",
+        .min_args = 0,
+        .max_args = 0,
+        .help_string_buf = "Display this menu.\r\n",
+        .callback = std::bind(
+            &CppAT::ATHelpCallback, 
+            this, 
+            std::placeholders::_1,
+            std::placeholders::_2,
+            std::placeholders::_3
+        )
+    };
+
 private:
     // Non readonly handle for at_command_list_ used when it is dynamically allocated into memory.
     ATCommandDef_t * at_command_list_ = nullptr;
     // Readonly handle for at_command_list_ used everywhere except where it is set.
     const ATCommandDef_t * at_command_list_ro_ = nullptr;
     uint16_t num_at_commands_;
-
-    bool ATHelpCallback(char op, const std::string_view args[], uint16_t num_args);
 };
 
 #endif

@@ -28,8 +28,7 @@ bool CppAT::SetATCommandList(
     uint16_t num_at_commands_in,
     bool at_command_list_is_static
 ) {
-    // Allocate space for the AT commands, with an extra slot for HELP at the end.
-    num_at_commands_ = num_at_commands_in + 1;
+    num_at_commands_ = num_at_commands_in;
 
     if (at_command_list_ != nullptr) {
         // There was already a list of AT commands allocated; deallocate it to avoid a memory leak.
@@ -56,22 +55,10 @@ bool CppAT::SetATCommandList(
         at_command_list_[i] = command_in;
     }
     // Add in +HELP command.
-    at_command_list_[num_at_commands_-1] = ATCommandDef_t{
-        .command = std::string_view("+HELP"),
-        .min_args = 0,
-        .max_args = 0,
-        .help_string = std::string_view("Display this text.\r\n"),
-        .callback = std::bind(
-            &CppAT::ATHelpCallback,
-            this,
-            std::placeholders::_1, 
-            std::placeholders::_2,
-            std::placeholders::_3
-        )
-    };
+
     // Copy string_view contents into buffers and remap string_views so that the at_command_list_ doesn't have broken
     // references when stuff goes out of scope after initialization.
-    for (uint16_t i = 0; i < num_at_commands_; i++) {
+    for (uint16_t i = 0; i < num_at_commands_; i++) { // Don't do this for help command.
         if (at_command_list_[i].command.length() > kATCommandMaxLen) {
             printf(
                 "CppAT::SetATCommandList: AT Command String for CommandDef %d exceeds maximum length %d.\r\n",
@@ -119,7 +106,7 @@ CppAT::~CppAT() {
 }
 
 uint16_t CppAT::GetNumATCommands() {
-    return num_at_commands_; // Remove auto-generated help command from count.
+    return num_at_commands_ + 1; // Include auto-generated help command in count.
 }
 
 const CppAT::ATCommandDef_t * CppAT::LookupATCommand(std::string_view command) {
@@ -131,6 +118,9 @@ const CppAT::ATCommandDef_t * CppAT::LookupATCommand(std::string_view command) {
         if (command.compare(0, kATCommandMaxLen, def.command) == 0) {
             return &def;
         }
+    }
+    if (command.compare(0, kATCommandMaxLen, "+HELP") == 0) {
+        return &at_help_command;
     }
     return nullptr;
 }
