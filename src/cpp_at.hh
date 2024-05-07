@@ -144,7 +144,13 @@ public:
         )
     };
 
-    int cpp_at_printf(const char* format, ...);
+    /**
+     * @brief printf handle used by CppAT.
+     * @param[in] Format string used for printing.
+     * @param[in] ... Variable length list of arguments.
+     * @retval The number of characters printed, or EOF if an error occurred.
+    */
+    static int cpp_at_printf(const char* format, ...);
 
 private:
     // Non readonly handle for at_command_list_ used when it is dynamically allocated into memory.

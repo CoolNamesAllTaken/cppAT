@@ -16,7 +16,8 @@ as long as it includes an implementation of vprintf, which accepts a variable le
 ```c++
 // For mapping cpp_at_printf
 #include <cstdarg>
-#include <cstdio>
+#include "printf.h" // for using custom printf defined in printf.h
+// #include <cstdio> // for using regular printf
 
 int CppAT::cpp_at_printf(const char* format, ...) {
     va_list args;
