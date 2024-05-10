@@ -172,4 +172,12 @@ private:
         return false;                                                                                 \
     }
 
+#define CPP_AT_SUCCESS              \
+    CppAT::cpp_at_printf("OK\r\n"); \
+    return true;
+
+#define CPP_AT_ERROR                    \
+    CppAT::cpp_at_printf("ERROR\r\n");  \
+    return false;
+
 #endif /* _CPP_AT_HH_ */
