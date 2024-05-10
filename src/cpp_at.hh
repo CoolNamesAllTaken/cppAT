@@ -1,5 +1,5 @@
-#ifndef _AT_COMMAND_PARSER_HH_
-#define _AT_COMMAND_PARSER_HH_
+#ifndef _CPP_AT_HH_
+#define _CPP_AT_HH_
 
 #include "stdint.h"
 #include <string_view>
@@ -160,4 +160,16 @@ private:
     uint16_t num_at_commands_;
 };
 
-#endif
+#define CPPAT_HAS_ARG(n) (num_args > (n) && !args[(n)].empty())
+#define CPPAT_TRY_ARG2NUM(args_index, num)                                       \
+    if (!CppAT::ArgToNum(args[(args_index)], (num))) {                           \
+        CppAT::cpp_at_printf("Error converting argument %d.\r\n", (args_index)); \
+        return false;                                                            \
+    }
+#define CPPAT_TRY_ARG2NUM_BASE(args_index, num, base)                                                 \
+    if (!CppAT::ArgToNum(args[(args_index)], (num), (base))) {                                        \
+        CppAT::cpp_at_printf("Error converting argument %d with base %d.\r\n", (args_index), (base)); \
+        return false;                                                                                 \
+    }
+
+#endif /* _CPP_AT_HH_ */
