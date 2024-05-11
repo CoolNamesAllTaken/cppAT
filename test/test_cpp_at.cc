@@ -17,12 +17,12 @@ int CppAT::cpp_at_printf(const char* format, ...) {
 bool callback1_was_called = false;
 bool callback2_was_called = false;
 
-bool Callback1(char op, const std::string_view args[], uint16_t num_args) {
+CPP_AT_CALLBACK(Callback1) {
     callback1_was_called = true;
     return true;
 }
 
-bool Callback2(char op, const std::string_view args[], uint16_t num_args) {
+CPP_AT_CALLBACK(Callback2) {
     callback2_was_called = true;
     return true;
 }
@@ -50,7 +50,7 @@ TEST(CppAT, SingleATCommand) {
     callback1_was_called = false;
     std::string_view args[] = {{"arg1"}, {"arg2"}};
     uint16_t num_args = 2;
-    returned_command->callback('=', args, num_args);
+    returned_command->callback(at_command_list[0], '=', args, num_args);
     ASSERT_TRUE(callback1_was_called);
     ASSERT_TRUE(returned_command->help_string.compare("This is a test.") == 0);
 }
@@ -97,7 +97,7 @@ TEST(CppAT, TwoATCommands) {
     callback1_was_called = false;
     std::string_view args1[] = {"arg1", "arg2"};
     uint16_t num_args1 = 2;
-    returned_command->callback('=', args1, num_args1);
+    returned_command->callback(*returned_command, '=', args1, num_args1);
     ASSERT_TRUE(callback1_was_called);
     ASSERT_TRUE(returned_command->help_string.compare("This is a test.") == 0);
 
@@ -108,7 +108,7 @@ TEST(CppAT, TwoATCommands) {
     callback2_was_called = false;
     std::string_view args2[] = {"arg1", "arg2"};
     uint16_t num_args2 = 2;
-    returned_command->callback('=', args2, num_args2);
+    returned_command->callback(*returned_command, '=', args2, num_args2);
     ASSERT_TRUE(callback2_was_called);
     ASSERT_TRUE(returned_command->help_string.compare("Configuration. Takes between 1 and 3 arguments.") == 0);
 }
@@ -265,7 +265,7 @@ TEST(CppAT, RejectMessageWithIncorrectNumberOfArgs) {
 /**
  * @brief Callback function that returns true if the args are "potato" or "potato,bacon"
 */
-bool MustBePotatoBacon(char op, const std::string_view args[], uint16_t num_args) {
+CPP_AT_CALLBACK(MustBePotatoBacon) {
     if (args[0].compare("potato") == 0) {
         if (num_args == 1) {
             return true;
@@ -297,7 +297,7 @@ TEST(CppAT, TwoArgsPotatoBacon) {
     ASSERT_FALSE(parser.ParseMessage("AT+POTATOBACON=potato,potato"));
 }
 
-bool PickyOpCallback(char op, const std::string_view args[], uint16_t num_args) {
+CPP_AT_CALLBACK(PickyOpCallback) {
     if (op == ' ' || op == '?') {
         return true;
     }
@@ -323,7 +323,7 @@ TEST(CppAT, PickyOpCallback) {
 
 std::vector<std::string_view> stored_args;
 char stored_op;
-bool StoreArgsCallback(char op, const std::string_view args[], uint16_t num_args) {
+CPP_AT_CALLBACK(StoreArgsCallback) {
     stored_args.clear();
     stored_op = op;
     for (uint16_t i = 0; i < num_args; i++) {
@@ -472,7 +472,7 @@ TEST(CppAT, StoreNegativeArgs) {
 }
 
 bool test1callback_called = false;
-bool Test1Callback(char op, const std::string_view args[], uint16_t num_args) {
+CPP_AT_CALLBACK(Test1Callback) {
     test1callback_called = true;
     return true;
 }
@@ -483,7 +483,7 @@ static const CppAT::ATCommandDef_t const_at_command_list[] = {
         .min_args = 0,
         .max_args = 2,
         .help_string_buf = "Doot doot help string.",
-        .callback = &Test1Callback
+        .callback = Test1Callback
     },
     {
         .command_buf = "+TEST2",
