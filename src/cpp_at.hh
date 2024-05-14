@@ -182,14 +182,14 @@ private:
     CppAT::cpp_at_printf("OK\r\n"); \
     return true;
 
+#define CPP_AT_SILENT_SUCCESS() return true;
+
 #define CPP_AT_ERROR(format, ...)                                            \
     CppAT::cpp_at_printf("ERROR " format "\r\n" __VA_OPT__(, ) __VA_ARGS__); \
     return false;
 
 #define CPP_AT_CALLBACK(callback_name) \
     bool callback_name(const CppAT::ATCommandDef_t &def, char op, const std::string_view args[], uint16_t num_args)
-
-#define CPP_AT_CALLBACK_ARGS const CppAT::ATCommandDef_t &def, char op, const std::string_view args[], uint16_t num_args
 
 #define CPP_AT_PRINTF(format, ...) \
     CppAT::cpp_at_printf("%s" format "\r\n", def.command.data() __VA_OPT__(, ) __VA_ARGS__);
