@@ -1,15 +1,16 @@
 #ifndef _CPP_AT_HH_
 #define _CPP_AT_HH_
 
-#include <cctype>  // for std::isspace()
+#include <cctype> // for std::isspace()
 #include <functional>
 #include <string_view>
 #include <vector>
 
 #include "stdint.h"
 
-class CppAT {
-   public:
+class CppAT
+{
+public:
     static const uint16_t kATCommandMaxLen = 16;
     // Initialized in .cc file.
     static const char kATPrefix[];
@@ -21,19 +22,20 @@ class CppAT {
     static const uint16_t kMaxNumArgs = 20;
     static const char kATMessageEndStr[];
 
-    struct ATCommandDef_t {
-        char command_buf[kATCommandMaxLen + 1] = "";  // leave room for '\0'
-        std::string_view command = {command_buf};     // Letters that come after the "AT+" prefix.
-        uint16_t min_args = 0;                        // Minimum number of arguments to expect after AT+<command>.
-        uint16_t max_args = 100;                      // Maximum number of arguments to expect after AT+<command>.
+    struct ATCommandDef_t
+    {
+        char command_buf[kATCommandMaxLen + 1] = ""; // leave room for '\0'
+        std::string_view command = {command_buf};    // Letters that come after the "AT+" prefix.
+        uint16_t min_args = 0;                       // Minimum number of arguments to expect after AT+<command>.
+        uint16_t max_args = 100;                     // Maximum number of arguments to expect after AT+<command>.
         char help_string_buf[kHelpStringMaxLen + 1] =
-            "Help string not defined.";  // Text to print when listing available AT commands.
+            "Help string not defined."; // Text to print when listing available AT commands.
         std::string_view help_string = {help_string_buf};
         std::function<bool(const ATCommandDef_t &, char, const std::string_view[], uint16_t)> callback =
-            nullptr;  // FUnction to call with list of arguments.
+            nullptr; // FUnction to call with list of arguments.
     };
 
-    CppAT();  // default constructor
+    CppAT(); // default constructor
 
     /**
      * @brief Constructor.
@@ -46,7 +48,7 @@ class CppAT {
      * @retval Your shiny new CppAT object.
      */
     CppAT(const ATCommandDef_t *at_command_list_in, uint16_t num_at_commands_in,
-          bool at_command_list_is_static = false);  // Constructor.
+          bool at_command_list_is_static = false); // Constructor.
 
     /**
      * @brief Destructor. Deallocates dynamically allocated memory.
@@ -97,20 +99,25 @@ class CppAT {
      * @retval True if parsing was successful, false otherwise.
      */
     template <typename T>
-    static inline bool ArgToNum(const std::string_view arg, T &number, uint16_t base = 10) {
+    static inline bool ArgToNum(const std::string_view arg, T &number, uint16_t base = 10)
+    {
         char *end_ptr;
         const char *arg_ptr = arg.data();
 
         // Parse Integer
         int parsed_int = strtol(arg_ptr, &end_ptr, base);
-        if (end_ptr != arg_ptr) {
-            while (std::isspace(*end_ptr)) ++end_ptr;
-            if (*end_ptr == '\0') {
+        if (end_ptr != arg_ptr)
+        {
+            while (std::isspace(*end_ptr))
+                ++end_ptr;
+            if (*end_ptr == '\0')
+            {
                 // NOTE: This may cause unexpected results if type is unsigned but parsed value is signed!
                 number = static_cast<T>(parsed_int);
-                if (number != parsed_int) {
-                    return false;  // Something weird happened, maybe trying to put a signed number into an unsigned
-                                   // value?
+                if (number != parsed_int)
+                {
+                    return false; // Something weird happened, maybe trying to put a signed number into an unsigned
+                                  // value?
                 }
                 return true;
             }
@@ -119,12 +126,13 @@ class CppAT {
 
         // Parse Float
         float parsed_float = strtof(arg_ptr, &end_ptr);
-        if (end_ptr != arg_ptr && *end_ptr == '\0') {
+        if (end_ptr != arg_ptr && *end_ptr == '\0')
+        {
             number = static_cast<T>(parsed_float);
             return true;
         }
 
-        return false;  // Failed to parse.
+        return false; // Failed to parse.
     }
 
     bool ATHelpCallback(const ATCommandDef_t &def, char op, const std::string_view args[], uint16_t num_args);
@@ -144,7 +152,7 @@ class CppAT {
      */
     static int cpp_at_printf(const char *format, ...);
 
-   private:
+private:
     // Non readonly handle for at_command_list_ used when it is dynamically allocated into memory.
     ATCommandDef_t *at_command_list_ = nullptr;
     // Readonly handle for at_command_list_ used everywhere except where it is set.
@@ -152,25 +160,42 @@ class CppAT {
     uint16_t num_at_commands_;
 };
 
+/** CppAT Convenience Macros */
+
 #define CPP_AT_HAS_ARG(n) (num_args > (n) && !args[(n)].empty())
+
 #define CPP_AT_TRY_ARG2NUM(args_index, num)                                      \
-    if (!CppAT::ArgToNum(args[(args_index)], (num))) {                           \
+    if (!CppAT::ArgToNum(args[(args_index)], (num)))                             \
+    {                                                                            \
         CppAT::cpp_at_printf("Error converting argument %d.\r\n", (args_index)); \
         return false;                                                            \
     }
+
 #define CPP_AT_TRY_ARG2NUM_BASE(args_index, num, base)                                                \
-    if (!CppAT::ArgToNum(args[(args_index)], (num), (base))) {                                        \
+    if (!CppAT::ArgToNum(args[(args_index)], (num), (base)))                                          \
+    {                                                                                                 \
         CppAT::cpp_at_printf("Error converting argument %d with base %d.\r\n", (args_index), (base)); \
         return false;                                                                                 \
     }
+
 #define CPP_AT_SUCCESS()            \
     CppAT::cpp_at_printf("OK\r\n"); \
     return true;
-#define CPP_AT_ERROR(message)                      \
-    CppAT::cpp_at_printf("ERROR " message "\r\n"); \
+
+#define CPP_AT_ERROR(format, ...)                                            \
+    CppAT::cpp_at_printf("ERROR " format "\r\n" __VA_OPT__(, ) __VA_ARGS__); \
     return false;
+
 #define CPP_AT_CALLBACK(callback_name) \
     bool callback_name(const CppAT::ATCommandDef_t &def, char op, const std::string_view args[], uint16_t num_args)
+
+#define CPP_AT_CALLBACK_ARGS const CppAT::ATCommandDef_t &def, char op, const std::string_view args[], uint16_t num_args
+
 #define CPP_AT_PRINTF(format, ...) \
     CppAT::cpp_at_printf("%s" format "\r\n", def.command.data() __VA_OPT__(, ) __VA_ARGS__);
+
+#define CPP_AT_BIND_MEMBER_CALLBACK(callback, instance)                          \
+    std::bind(&callback, instance, std::placeholders::_1, std::placeholders::_2, \
+              std::placeholders::_3, std::placeholders::_4)
+
 #endif /* _CPP_AT_HH_ */

@@ -28,22 +28,94 @@ int CppAT::cpp_at_printf(const char* format, ...) {
 }
 ```
 
-## Helpful Hints
+## Binding Callbacks to ATCommandDef_t's
 
-Example of binding a callback function to a particular instance of a class using std::bind.
+### Creating a callback function
+
+Callback functions are executed when an AT command matching a given ATCommandDef_t is received. Callback functions can be freestanding (not inside a class), or a member function of a class.
+
+#### Freestanding callback function example:
+
+This function parses an AT command for a single argument, which it stores in the global variable at_config_mode.
 
 ```c++
+/**
+ * AT+CONFIG Callback
+ * AT+CONFIG=<config_mode:uint16_t>
+ *  config_mode = 0 (print as normal), 1 (suppress non-configuration print messages)
+ */
+CPP_AT_CALLBACK(ATConfigCallback) {
+    if (op == '?') {
+        // AT+CONFIG mode query.
+        CPP_AT_PRINTF("=%d", at_config_mode);
+    } else if (op == '=') {
+        // AT+CONFIG set command.
+        if (!CPP_AT_HAS_ARG(0)) {
+            CPP_AT_ERROR("Need to specify a config mode to run.")
+        }
+        ATConfigMode new_mode;
+        CPP_AT_TRY_ARG2NUM(0, (uint16_t &)new_mode);
+        if (new_mode >= ATConfigMode::kInvalid) {
+            CPP_AT_ERROR("%d is not a valid config mode.", (uint16_t)new_mode);
+        }
+
+        at_config_mode = new_mode;
+        CPP_AT_SUCCESS()
+    }
+    return true;
+}
+
 ATCommandDef_t def = {
-    .command = "+MTLREAD",
+    .command = "+CONFIG",
     .min_args = 0,
     .max_args = 0,
-    .help_string = "Read ADC counts and mV values for high and low MTL thresholds. Call with no ops nor arguments, AT+MTLREAD.\r\n",
-    .callback = std::bind(
-        &ADSBee::ATMTLReadCallback,
-        this,
-        std::placeholders::_1, 
-        std::placeholders::_2,
-        std::placeholders::_3
-    )
+    .help_string = "AT+CONFIG=<at_config_mode>: Set the value of at_config_mode.\r\n",
+    .callback = ATConfigCallback
 }
 ```
+
+#### Member function callback example:
+
+This function parses an AT command for a single argument, which it stores in the member variable at_config_mode_.
+
+```c++
+/**
+ * AT+CONFIG Callback
+ * AT+CONFIG=<config_mode:uint16_t>
+ *  config_mode = 0 (print as normal), 1 (suppress non-configuration print messages)
+ */
+bool CommsManager::ATConfigCallback(CPP_AT_CALLBACK_ARGS) {
+    if (op == '?') {
+        // AT+CONFIG mode query.
+        CPP_AT_PRINTF("=%d", at_config_mode_);
+    } else if (op == '=') {
+        // AT+CONFIG set command.
+        if (!CPP_AT_HAS_ARG(0)) {
+            CPP_AT_ERROR("Need to specify a config mode to run.")
+        }
+        ATConfigMode new_mode;
+        CPP_AT_TRY_ARG2NUM(0, (uint16_t &)new_mode);
+        if (new_mode >= ATConfigMode::kInvalid) {
+            CPP_AT_ERROR("%d is not a valid config mode.", (uint16_t)new_mode);
+        }
+
+        at_config_mode_ = new_mode;
+        CPP_AT_SUCCESS()
+    }
+    return true;
+}
+
+// Note that instance_of_comms_manager is a CommsManager instance.
+ATCommandDef_t def = {
+    .command = "+CONFIG",
+    .min_args = 0,
+    .max_args = 0,
+    .help_string = "AT+CONFIG=<at_config_mode>: Set the value of at_config_mode.\r\n",
+    .callback = CPP_AT_BIND_MEMBER_CALLBACK(CommsManager::ATMTLReadCallback, instance_of_comms_manager)
+}
+```
+
+## Troubleshooting
+
+* During linking, receive an error saying "Undefined reference to `CppAT::cpp_at_printf(char const*, ...)`".
+    * Make sure to implement the cpp_at_printf function! See the [Remapping Printf](#remapping-printf) section.
