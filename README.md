@@ -119,3 +119,5 @@ ATCommandDef_t def = {
 
 * During linking, receive an error saying "Undefined reference to `CppAT::cpp_at_printf(char const*, ...)`".
     * Make sure to implement the cpp_at_printf function! See the [Remapping Printf](#remapping-printf) section.
+* "Double free" detected in destructor.
+    * Copy and move assignment operators aren't currently implemented for CppAT. Pass CppAT objects by reference only!

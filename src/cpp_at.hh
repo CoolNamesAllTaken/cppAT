@@ -161,38 +161,52 @@ private:
 };
 
 /** CppAT Convenience Macros */
+// NOTE: do {} while (false) structure is used on standalone multi-line macros to create a single block and force use of
+// a semicolon after calling the macro.
 
 #define CPP_AT_HAS_ARG(n) (num_args > (n) && !args[(n)].empty())
 
-#define CPP_AT_TRY_ARG2NUM(args_index, num)                                      \
-    if (!CppAT::ArgToNum(args[(args_index)], (num)))                             \
+#define CPP_AT_TRY_ARG2NUM(args_index, num)                                          \
+    do                                                                               \
+    {                                                                                \
+        if (!CppAT::ArgToNum(args[(args_index)], (num)))                             \
+        {                                                                            \
+            CppAT::cpp_at_printf("Error converting argument %d.\r\n", (args_index)); \
+            return false;                                                            \
+        }                                                                            \
+    } while (false)
+
+#define CPP_AT_TRY_ARG2NUM_BASE(args_index, num, base)                                                    \
+    do                                                                                                    \
+    {                                                                                                     \
+        if (!CppAT::ArgToNum(args[(args_index)], (num), (base)))                                          \
+        {                                                                                                 \
+            CppAT::cpp_at_printf("Error converting argument %d with base %d.\r\n", (args_index), (base)); \
+            return false;                                                                                 \
+        }                                                                                                 \
+    } while (false)
+
+#define CPP_AT_SUCCESS()                \
+    do                                  \
+    {                                   \
+        CppAT::cpp_at_printf("OK\r\n"); \
+        return true;                    \
+    } while (false)
+
+#define CPP_AT_SILENT_SUCCESS() return true
+
+#define CPP_AT_ERROR(format, ...)                                                \
+    do                                                                           \
     {                                                                            \
-        CppAT::cpp_at_printf("Error converting argument %d.\r\n", (args_index)); \
+        CppAT::cpp_at_printf("ERROR " format "\r\n" __VA_OPT__(, ) __VA_ARGS__); \
         return false;                                                            \
-    }
-
-#define CPP_AT_TRY_ARG2NUM_BASE(args_index, num, base)                                                \
-    if (!CppAT::ArgToNum(args[(args_index)], (num), (base)))                                          \
-    {                                                                                                 \
-        CppAT::cpp_at_printf("Error converting argument %d with base %d.\r\n", (args_index), (base)); \
-        return false;                                                                                 \
-    }
-
-#define CPP_AT_SUCCESS()            \
-    CppAT::cpp_at_printf("OK\r\n"); \
-    return true;
-
-#define CPP_AT_SILENT_SUCCESS() return true;
-
-#define CPP_AT_ERROR(format, ...)                                            \
-    CppAT::cpp_at_printf("ERROR " format "\r\n" __VA_OPT__(, ) __VA_ARGS__); \
-    return false;
+    } while (false)
 
 #define CPP_AT_CALLBACK(callback_name) \
     bool callback_name(const CppAT::ATCommandDef_t &def, char op, const std::string_view args[], uint16_t num_args)
 
 #define CPP_AT_PRINTF(format, ...) \
-    CppAT::cpp_at_printf("%s" format "\r\n", def.command.data() __VA_OPT__(, ) __VA_ARGS__);
+    CppAT::cpp_at_printf("%s" format "\r\n", def.command.data() __VA_OPT__(, ) __VA_ARGS__)
 
 #define CPP_AT_BIND_MEMBER_CALLBACK(callback, instance)                          \
     std::bind(&callback, instance, std::placeholders::_1, std::placeholders::_2, \
