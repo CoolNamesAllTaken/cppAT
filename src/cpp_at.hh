@@ -208,8 +208,8 @@ private:
 #define CPP_AT_PRINTF(format, ...) \
     CppAT::cpp_at_printf("%s" format "\r\n", def.command.data() __VA_OPT__(, ) __VA_ARGS__)
 
-#define CPP_AT_BIND_MEMBER_CALLBACK(callback, instance)                          \
-    std::bind(&callback, instance, std::placeholders::_1, std::placeholders::_2, \
+#define CPP_AT_BIND_MEMBER_CALLBACK(callback, instance)                           \
+    std::bind(&callback, &instance, std::placeholders::_1, std::placeholders::_2, \
               std::placeholders::_3, std::placeholders::_4)
 
 #endif /* _CPP_AT_HH_ */
