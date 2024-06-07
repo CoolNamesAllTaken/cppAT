@@ -47,7 +47,7 @@ This function parses an AT command for a single argument, which it stores in the
 CPP_AT_CALLBACK(ATConfigCallback) {
     if (op == '?') {
         // AT+CONFIG mode query.
-        CPP_AT_PRINTF("=%d", at_config_mode);
+        CPP_AT_CMD_PRINTF("=%d", at_config_mode);
     } else if (op == '=') {
         // AT+CONFIG set command.
         if (!CPP_AT_HAS_ARG(0)) {
@@ -87,7 +87,7 @@ This function parses an AT command for a single argument, which it stores in the
 bool CommsManager::ATConfigCallback(CPP_AT_CALLBACK_ARGS) {
     if (op == '?') {
         // AT+CONFIG mode query.
-        CPP_AT_PRINTF("=%d", at_config_mode_);
+        CPP_AT_CMD_PRINTF("=%d", at_config_mode_);
     } else if (op == '=') {
         // AT+CONFIG set command.
         if (!CPP_AT_HAS_ARG(0)) {

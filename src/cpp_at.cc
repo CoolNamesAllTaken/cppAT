@@ -265,7 +265,16 @@ bool CppAT::ATHelpCallback(const ATCommandDef_t &def, char op, const std::string
     {
         ATCommandDef_t at_command = at_command_list_ro_[i];
         cpp_at_printf("%.*s: \r\n", at_command.command.length(), at_command.command.data());
-        cpp_at_printf("\t%.*s\r\n", at_command.help_string.length(), at_command.help_string.data());
+        if (at_command.help_callback)
+        {
+            // Call the provided help callback function.
+            at_command.help_callback();
+        }
+        else
+        {
+            // Print the help string.
+            cpp_at_printf("\t%.*s\r\n", at_command.help_string.length(), at_command.help_string.data());
+        }
     }
     return true;
 }

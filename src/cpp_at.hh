@@ -31,8 +31,9 @@ public:
         char help_string_buf[kHelpStringMaxLen + 1] =
             "Help string not defined."; // Text to print when listing available AT commands.
         std::string_view help_string = {help_string_buf};
+        std::function<void(void)> help_callback = nullptr; // Optional function to use for printing help string instead of help_string.
         std::function<bool(const ATCommandDef_t &, char, const std::string_view[], uint16_t)> callback =
-            nullptr; // FUnction to call with list of arguments.
+            nullptr; // Function to call with list of arguments when an AT command is received.
     };
 
     CppAT(); // default constructor
@@ -205,11 +206,19 @@ private:
 #define CPP_AT_CALLBACK(callback_name) \
     bool callback_name(const CppAT::ATCommandDef_t &def, char op, const std::string_view args[], uint16_t num_args)
 
-#define CPP_AT_PRINTF(format, ...) \
-    CppAT::cpp_at_printf("%s" format "\r\n", def.command.data() __VA_OPT__(, ) __VA_ARGS__)
+#define CPP_AT_HELP_CALLBACK(callback_name) void callback_name()
 
 #define CPP_AT_BIND_MEMBER_CALLBACK(callback, instance)                           \
     std::bind(&callback, &instance, std::placeholders::_1, std::placeholders::_2, \
               std::placeholders::_3, std::placeholders::_4)
+
+#define CPP_AT_BIND_MEMBER_HELP_CALLBACK(callback, instance) \
+    std::bind(&callback, &instance)
+
+#define CPP_AT_CMD_PRINTF(format, ...) \
+    CppAT::cpp_at_printf("%s" format "\r\n", def.command.data() __VA_OPT__(, ) __VA_ARGS__)
+
+#define CPP_AT_PRINTF(format, ...) \
+    CppAT::cpp_at_printf(format __VA_OPT__(, ) __VA_ARGS__)
 
 #endif /* _CPP_AT_HH_ */
