@@ -6,7 +6,8 @@
 #include <cstdarg>
 #include <cstdio>
 
-int CppAT::cpp_at_printf(const char* format, ...) {
+int CppAT::cpp_at_printf(const char *format, ...)
+{
     va_list args;
     va_start(args, format);
     int res = vprintf(format, args);
@@ -17,34 +18,34 @@ int CppAT::cpp_at_printf(const char* format, ...) {
 bool callback1_was_called = false;
 bool callback2_was_called = false;
 
-CPP_AT_CALLBACK(Callback1) {
+CPP_AT_CALLBACK(Callback1)
+{
     callback1_was_called = true;
     return true;
 }
 
-CPP_AT_CALLBACK(Callback2) {
+CPP_AT_CALLBACK(Callback2)
+{
     callback2_was_called = true;
     return true;
 }
 
-TEST(CppAT, SingleATCommand) {
+TEST(CppAT, SingleATCommand)
+{
     CppAT::ATCommandDef_t at_command_list[] = {
-        {
-            .command = "+TEST",
-            .min_args = 0,
-            .max_args = 1,
-            .help_string = "This is a test.",
-            .callback = Callback1
-        }
-    };
-    CppAT parser = CppAT(at_command_list, sizeof(at_command_list)/sizeof(at_command_list[0]));
+        {.command = "+TEST",
+         .min_args = 0,
+         .max_args = 1,
+         .help_string = "This is a test.",
+         .callback = Callback1}};
+    CppAT parser = CppAT(at_command_list, sizeof(at_command_list) / sizeof(at_command_list[0]));
     ASSERT_EQ(parser.GetNumATCommands(), 2); // HELP command automatically added.
-    
+
     // Looking up a fake command should fail.
     ASSERT_TRUE(parser.LookupATCommand("+Blah") == nullptr);
 
     // Looking up a real command should work.
-    const CppAT::ATCommandDef_t * returned_command = parser.LookupATCommand("+TEST");
+    const CppAT::ATCommandDef_t *returned_command = parser.LookupATCommand("+TEST");
     ASSERT_NE(returned_command, nullptr);
     ASSERT_TRUE(returned_command->command.compare("+TEST") == 0);
     callback1_was_called = false;
@@ -55,34 +56,32 @@ TEST(CppAT, SingleATCommand) {
     ASSERT_TRUE(returned_command->help_string.compare("This is a test.") == 0);
 }
 
-CppAT BuildExampleParser1() {
+CppAT BuildExampleParser1()
+{
     uint16_t num_at_commands = 2;
     CppAT::ATCommandDef_t at_command_list[] = {
-        {
-            .command = "+TEST",
-            .min_args = 0,
-            .max_args = 1,
-            .help_string = "This is a test.",
-            .callback = Callback1
-        },
-        {
-            .command = "+CFG",
-            .min_args = 1,
-            .max_args = 3,
-            .help_string = "Configuration. Takes between 1 and 3 arguments.",
-            .callback = Callback2
-        }
-    };
+        {.command = "+TEST",
+         .min_args = 0,
+         .max_args = 1,
+         .help_string = "This is a test.",
+         .callback = Callback1},
+        {.command = "+CFG",
+         .min_args = 1,
+         .max_args = 3,
+         .help_string = "Configuration. Takes between 1 and 3 arguments.",
+         .callback = Callback2}};
     return CppAT(at_command_list, num_at_commands);
 }
 
-TEST(CppAT, HelpString) {
+TEST(CppAT, HelpString)
+{
     CppAT parser = BuildExampleParser1();
     ASSERT_TRUE(parser.ParseMessage("AT+HELP\r\n"));
     // This test doesn't do anything other than make sure it doesn't crash when calling the callbacks in AT+HELP.
 }
 
-TEST(CppAT, TwoATCommands) {
+TEST(CppAT, TwoATCommands)
+{
     CppAT parser = BuildExampleParser1();
     ASSERT_TRUE(parser.is_valid);
     ASSERT_EQ(parser.GetNumATCommands(), 3);
@@ -91,7 +90,7 @@ TEST(CppAT, TwoATCommands) {
     ASSERT_TRUE(parser.LookupATCommand("+Potatoes") == nullptr);
 
     // Looking up real command 1 should work.
-    const CppAT::ATCommandDef_t * returned_command = parser.LookupATCommand("+TEST");
+    const CppAT::ATCommandDef_t *returned_command = parser.LookupATCommand("+TEST");
     ASSERT_NE(returned_command, nullptr);
     ASSERT_TRUE(returned_command->command.compare("+TEST") == 0);
     callback1_was_called = false;
@@ -113,14 +112,16 @@ TEST(CppAT, TwoATCommands) {
     ASSERT_TRUE(returned_command->help_string.compare("Configuration. Takes between 1 and 3 arguments.") == 0);
 }
 
-TEST(CppAT, RejectMessageWithNoAT) {
+TEST(CppAT, RejectMessageWithNoAT)
+{
     CppAT parser = BuildExampleParser1();
 
     ASSERT_FALSE(parser.ParseMessage("Potatoes potatoes potatoes I love potatoes."));
     ASSERT_FALSE(parser.ParseMessage("A T just kidding."));
 }
 
-TEST(CppAT, RejectMessageWithZeroLengthCommand) {
+TEST(CppAT, RejectMessageWithZeroLengthCommand)
+{
     CppAT parser = BuildExampleParser1();
 
     ASSERT_FALSE(parser.ParseMessage("AT+ other words"));
@@ -129,167 +130,179 @@ TEST(CppAT, RejectMessageWithZeroLengthCommand) {
     ASSERT_FALSE(parser.ParseMessage("AT+\n"));
 }
 
-TEST(CppAT, RejectMessageWithCommandTooLong) {
+TEST(CppAT, RejectMessageWithCommandTooLong)
+{
     // Build a parser that contains a command that is too long.
     CppAT::ATCommandDef_t at_command_list[] = {
-        {
-            .command = "+HIHIHIHIHIHIHIHIHIHITOOLONG"
-        }
-    };
-    CppAT parser = CppAT(at_command_list, sizeof(at_command_list)/sizeof(at_command_list[0]));
+        {.command = "+HIHIHIHIHIHIHIHIHIHITOOLONG"}};
+    CppAT parser = CppAT(at_command_list, sizeof(at_command_list) / sizeof(at_command_list[0]));
     ASSERT_FALSE(parser.is_valid);
 
     ASSERT_FALSE(parser.ParseMessage("AT+HIHIHIHIHIHIHIHIHIHITOOLONG"));
 }
 
-TEST(CppAT, FailToInitWithHelpStringTooLong) {
+TEST(CppAT, FailToInitWithHelpStringTooLong)
+{
     // Build a parser that contains a command that is too long.
     CppAT::ATCommandDef_t at_command_list[] = {
-        {
-            .help_string = "NARRATOR:"
-                "(Black screen with text; The sound of buzzing bees can be heard)"
-                "According to all known laws"
-                "of aviation,"
-                ":"
-                "there is no way a bee"
-                "should be able to fly."
-                ":"
-                "Its wings are too small to get"
-                "its fat little body off the ground."
-                ":"
-                "The bee, of course, flies anyway"
-                ":"
-                "because bees don't care"
-                "what humans think is impossible."
-                "BARRY BENSON:"
-                "(Barry is picking out a shirt)"
-                "Yellow, black. Yellow, black."
-                "Yellow, black. Yellow, black."
-                ":"
-                "Ooh, black and yellow!"
-                "Let's shake it up a little."
-                "JANET BENSON:"
-                "Barry! Breakfast is ready!"
-                "BARRY:"
-                "Coming!"
-                ":"
-                "Hang on a second."
-                "(Barry uses his antenna like a phone)"
-                ":"
-                "Hello?"
-                "ADAM FLAYMAN:"
-                ""
-                "(Through phone)"
-                "- Barry?"
-                "BARRY:"
-                "- Adam?"
-                "ADAM:"
-                "- Can you believe this is happening?"
-                "BARRY:"
-                "- I can't. I'll pick you up."
-                "(Barry flies down the stairs)"
-                ":"
-                "MARTIN BENSON:"
-                "Looking sharp."
-                "JANET:"
-                "Use the stairs. Your father"
-                "paid good money for those."
-                "BARRY:"
-                "Sorry. I'm excited."
-                "MARTIN:"
-                "Here's the graduate."
-                "We're very proud of you, son."
-                ":"
-                "A perfect report card, all B's."
-                "JANET:"
-                "Very proud."
-                "(Rubs Barry's hair)"
-                "BARRY="
-                "Ma! I got a thing going here."
-                "JANET:"
-                "- You got lint on your fuzz."
-                "BARRY:"
-                "- Ow! That's me!"
-                ""
-                "JANET:"
-                "- Wave to us! We'll be in row 118,000."
-                "- Bye!"
-                "(Barry flies out the door)"
-                "JANET:"
-                "Barry, I told you,"
-                "stop flying in the house!"
-                "(Barry drives through the hive,and is waved at by Adam who is reading a"
-                "newspaper)"
-                "BARRY=="
-                "- Hey, Adam."
-                "ADAM:"
-                "- Hey, Barry."
-                "(Adam gets in Barry's car)"
-                ":"
-                "- Is that fuzz gel?"
-                "BARRY:"
-                "- A little. Special day, graduation."
-                "ADAM:"
-                "Never thought I'd make it."
-                "(Barry pulls away from the house and continues driving)"
-                "BARRY:"
-                "Three days grade school,"
-                "three days high school..."
-                "ADAM:"
-                "Those were awkward."
-                "BARRY:"
-                "Three days college. I'm glad I took"
-                "a day and hitchhiked around the hive."
-        }
-    };
-    CppAT parser = CppAT(at_command_list, sizeof(at_command_list)/sizeof(at_command_list[0]));
+        {.help_string = "NARRATOR:"
+                        "(Black screen with text; The sound of buzzing bees can be heard)"
+                        "According to all known laws"
+                        "of aviation,"
+                        ":"
+                        "there is no way a bee"
+                        "should be able to fly."
+                        ":"
+                        "Its wings are too small to get"
+                        "its fat little body off the ground."
+                        ":"
+                        "The bee, of course, flies anyway"
+                        ":"
+                        "because bees don't care"
+                        "what humans think is impossible."
+                        "BARRY BENSON:"
+                        "(Barry is picking out a shirt)"
+                        "Yellow, black. Yellow, black."
+                        "Yellow, black. Yellow, black."
+                        ":"
+                        "Ooh, black and yellow!"
+                        "Let's shake it up a little."
+                        "JANET BENSON:"
+                        "Barry! Breakfast is ready!"
+                        "BARRY:"
+                        "Coming!"
+                        ":"
+                        "Hang on a second."
+                        "(Barry uses his antenna like a phone)"
+                        ":"
+                        "Hello?"
+                        "ADAM FLAYMAN:"
+                        ""
+                        "(Through phone)"
+                        "- Barry?"
+                        "BARRY:"
+                        "- Adam?"
+                        "ADAM:"
+                        "- Can you believe this is happening?"
+                        "BARRY:"
+                        "- I can't. I'll pick you up."
+                        "(Barry flies down the stairs)"
+                        ":"
+                        "MARTIN BENSON:"
+                        "Looking sharp."
+                        "JANET:"
+                        "Use the stairs. Your father"
+                        "paid good money for those."
+                        "BARRY:"
+                        "Sorry. I'm excited."
+                        "MARTIN:"
+                        "Here's the graduate."
+                        "We're very proud of you, son."
+                        ":"
+                        "A perfect report card, all B's."
+                        "JANET:"
+                        "Very proud."
+                        "(Rubs Barry's hair)"
+                        "BARRY="
+                        "Ma! I got a thing going here."
+                        "JANET:"
+                        "- You got lint on your fuzz."
+                        "BARRY:"
+                        "- Ow! That's me!"
+                        ""
+                        "JANET:"
+                        "- Wave to us! We'll be in row 118,000."
+                        "- Bye!"
+                        "(Barry flies out the door)"
+                        "JANET:"
+                        "Barry, I told you,"
+                        "stop flying in the house!"
+                        "(Barry drives through the hive,and is waved at by Adam who is reading a"
+                        "newspaper)"
+                        "BARRY=="
+                        "- Hey, Adam."
+                        "ADAM:"
+                        "- Hey, Barry."
+                        "(Adam gets in Barry's car)"
+                        ":"
+                        "- Is that fuzz gel?"
+                        "BARRY:"
+                        "- A little. Special day, graduation."
+                        "ADAM:"
+                        "Never thought I'd make it."
+                        "(Barry pulls away from the house and continues driving)"
+                        "BARRY:"
+                        "Three days grade school,"
+                        "three days high school..."
+                        "ADAM:"
+                        "Those were awkward."
+                        "BARRY:"
+                        "Three days college. I'm glad I took"
+                        "a day and hitchhiked around the hive."}};
+    CppAT parser = CppAT(at_command_list, sizeof(at_command_list) / sizeof(at_command_list[0]));
     ASSERT_FALSE(parser.is_valid);
 }
 
-TEST(CppAT, RejectMessageWithNoMatchingATCommand) {
+TEST(CppAT, RejectMessageWithNoMatchingATCommand)
+{
     CppAT parser = BuildExampleParser1();
 
     ASSERT_FALSE(parser.ParseMessage("AT+WRONG"));
     ASSERT_FALSE(parser.ParseMessage("AT+\r\n"));
 }
 
-TEST(CppAT, RejectMessageWithIncorrectNumberOfArgs) {
+TEST(CppAT, RejectMessageWithIncorrectNumberOfArgs)
+{
     CppAT parser = BuildExampleParser1();
 
     // AT+TEST takes between 0-1 args.
     ASSERT_FALSE(parser.ParseMessage("AT+TEST=a,b")); // two args
-    ASSERT_TRUE(parser.ParseMessage("AT+TEST=a")); // one arg
-    ASSERT_TRUE(parser.ParseMessage("AT+TEST")); // no args
+    ASSERT_TRUE(parser.ParseMessage("AT+TEST=a"));    // one arg
+    ASSERT_TRUE(parser.ParseMessage("AT+TEST"));      // no args
+}
+
+TEST(CppAT, RejectMessageWithArgTooLong)
+{
+    CppAT parser = BuildExampleParser1();
+
+    // 64 characters exactly.
+    ASSERT_TRUE(parser.ParseMessage("AT+TEST=aasdgasgasfgasfgasfghasfhasdfhasdthaszfhaszdfhasdzfhasdfzbdgasdg"));
+    // >64 characters.
+    ASSERT_FALSE(parser.ParseMessage("AT+TEST=aasdgasgasfgasfgasfghasfhasdfhasdthaszfhaszdfhasdzfhasdfzbdgasdgasd"));
 }
 
 /**
  * @brief Callback function that returns true if the args are "potato" or "potato,bacon"
-*/
-CPP_AT_CALLBACK(MustBePotatoBacon) {
-    if (args[0].compare("potato") == 0) {
-        if (num_args == 1) {
+ */
+CPP_AT_CALLBACK(MustBePotatoBacon)
+{
+    if (args[0].compare("potato") == 0)
+    {
+        if (num_args == 1)
+        {
             return true;
-        } else {
+        }
+        else
+        {
             return args[1].compare("bacon") == 0;
         }
     }
     return false;
 }
 
-CppAT BuildPotatoBaconParser() {
-    CppAT::ATCommandDef_t at_command_list[] =  {
-        {
-            .command = "+POTATOBACON",
-            .min_args = 1,
-            .max_args = 2,
-            .help_string = "Acceptable args are \"potato\" or \" potato,bacon\".",
-            .callback = MustBePotatoBacon
-        }
-    };
-    return CppAT(at_command_list, sizeof(at_command_list)/sizeof(at_command_list[0]));
+CppAT BuildPotatoBaconParser()
+{
+    CppAT::ATCommandDef_t at_command_list[] = {
+        {.command = "+POTATOBACON",
+         .min_args = 1,
+         .max_args = 2,
+         .help_string = "Acceptable args are \"potato\" or \" potato,bacon\".",
+         .callback = MustBePotatoBacon}};
+    return CppAT(at_command_list, sizeof(at_command_list) / sizeof(at_command_list[0]));
 }
 
-TEST(CppAT, TwoArgsPotatoBacon) {
+TEST(CppAT, TwoArgsPotatoBacon)
+{
     CppAT parser = BuildPotatoBaconParser();
     ASSERT_TRUE(parser.ParseMessage("AT+POTATOBACON=potato"));
     ASSERT_FALSE(parser.ParseMessage("AT+POTATOBACON=bacon"));
@@ -297,24 +310,24 @@ TEST(CppAT, TwoArgsPotatoBacon) {
     ASSERT_FALSE(parser.ParseMessage("AT+POTATOBACON=potato,potato"));
 }
 
-CPP_AT_CALLBACK(PickyOpCallback) {
-    if (op == ' ' || op == '?') {
+CPP_AT_CALLBACK(PickyOpCallback)
+{
+    if (op == ' ' || op == '?')
+    {
         return true;
     }
     return false;
 }
 
-TEST(CppAT, PickyOpCallback) {
+TEST(CppAT, PickyOpCallback)
+{
     CppAT::ATCommandDef_t at_command_list[] = {
-        {
-            .command = "+PICKYOP",
-            .min_args = 0,
-            .max_args = 100,
-            .help_string = "Doot doot whatever but make the op ' ' or '?'.",
-            .callback = PickyOpCallback
-        }
-    };
-    CppAT parser = CppAT(at_command_list, sizeof(at_command_list)/sizeof(at_command_list[0]));
+        {.command = "+PICKYOP",
+         .min_args = 0,
+         .max_args = 100,
+         .help_string = "Doot doot whatever but make the op ' ' or '?'.",
+         .callback = PickyOpCallback}};
+    CppAT parser = CppAT(at_command_list, sizeof(at_command_list) / sizeof(at_command_list[0]));
     ASSERT_FALSE(parser.ParseMessage("AT+PICKYOP=doot\r\n"));
     ASSERT_TRUE(parser.ParseMessage("AT+PICKYOP doot\r\n"));
     ASSERT_TRUE(parser.ParseMessage("AT+PICKYOP?\r\n"));
@@ -323,36 +336,37 @@ TEST(CppAT, PickyOpCallback) {
 
 std::vector<std::string_view> stored_args;
 char stored_op;
-CPP_AT_CALLBACK(StoreArgsCallback) {
+CPP_AT_CALLBACK(StoreArgsCallback)
+{
     stored_args.clear();
     stored_op = op;
-    for (uint16_t i = 0; i < num_args; i++) {
+    for (uint16_t i = 0; i < num_args; i++)
+    {
         stored_args.push_back(args[i]);
     }
     return true;
 }
 
-CppAT BuildStoreArgParser() {
+CppAT BuildStoreArgParser()
+{
     CppAT::ATCommandDef_t at_command_list[] = {
-        {
-            .command = "+STORE",
-            .min_args = 0,
-            .max_args = 50,
-            .help_string = "Stores all arguments it receives.",
-            .callback = StoreArgsCallback
-        }
-    };
-    return CppAT(at_command_list, sizeof(at_command_list)/sizeof(at_command_list[0]));
+        {.command = "+STORE",
+         .min_args = 0,
+         .max_args = 50,
+         .help_string = "Stores all arguments it receives.",
+         .callback = StoreArgsCallback}};
+    return CppAT(at_command_list, sizeof(at_command_list) / sizeof(at_command_list[0]));
 }
 
-TEST(CppAT, StoreArgsWithoutReturns) {
+TEST(CppAT, StoreArgsWithoutReturns)
+{
     CppAT parser = BuildStoreArgParser();
-    
+
     // No Args
     parser.ParseMessage("AT+STORE\r\n");
     ASSERT_EQ(stored_args.size(), 0u);
     ASSERT_EQ(stored_op, '\0');
-    
+
     // Question mark without newline.
     parser.ParseMessage("AT+STORE?");
     ASSERT_EQ(stored_args.size(), 0u);
@@ -377,7 +391,8 @@ TEST(CppAT, StoreArgsWithoutReturns) {
     ASSERT_EQ(stored_args[0].compare("hello"), 0);
 }
 
-TEST(CppAT, AllowBlankArgs) {
+TEST(CppAT, AllowBlankArgs)
+{
     CppAT parser = BuildStoreArgParser();
 
     parser.ParseMessage("AT+STORE=,,5,");
@@ -389,7 +404,8 @@ TEST(CppAT, AllowBlankArgs) {
 }
 
 static constexpr float kFloatCloseEnough = 0.00001f;
-TEST(CppAT, ArgToNumFloat) {
+TEST(CppAT, ArgToNumFloat)
+{
     // Test float.
     float num = 0.0f;
     ASSERT_TRUE(CppAT::ArgToNum(std::string_view("5.73"), num));
@@ -405,7 +421,8 @@ TEST(CppAT, ArgToNumFloat) {
     ASSERT_FALSE(CppAT::ArgToNum(std::string_view(""), num));
 }
 
-TEST(CppAT, ArgToNumInt) {
+TEST(CppAT, ArgToNumInt)
+{
     // Test positive and negative integers.
     int num = 0;
     ASSERT_TRUE(CppAT::ArgToNum(std::string_view("1234"), num));
@@ -420,7 +437,8 @@ TEST(CppAT, ArgToNumInt) {
     ASSERT_FALSE(CppAT::ArgToNum(std::string_view("hyello1234"), num));
 }
 
-TEST(CppAT, ArgToNumUint16_t) {
+TEST(CppAT, ArgToNumUint16_t)
+{
     uint16_t num = 0;
     // Test nominal positive value for uint16_t.
     ASSERT_TRUE(CppAT::ArgToNum(std::string_view("1234"), num));
@@ -442,7 +460,8 @@ TEST(CppAT, ArgToNumUint16_t) {
     ASSERT_EQ(num, 0xBEEF);
 }
 
-TEST(CppAT, ArgToNumUint32_t) {
+TEST(CppAT, ArgToNumUint32_t)
+{
     uint32_t num = 0;
     // Test nominal positive value for uint16_t.
     ASSERT_TRUE(CppAT::ArgToNum(std::string_view("1234567"), num));
@@ -461,9 +480,10 @@ TEST(CppAT, ArgToNumUint32_t) {
     ASSERT_EQ(num, 0xDEADBEEF);
 }
 
-TEST(CppAT, StoreNegativeArgs) {
+TEST(CppAT, StoreNegativeArgs)
+{
     CppAT parser = BuildStoreArgParser();
-    
+
     // Question mark without newline.
     parser.ParseMessage("AT+STORE=-53");
     ASSERT_EQ(stored_args.size(), 1u);
@@ -472,28 +492,25 @@ TEST(CppAT, StoreNegativeArgs) {
 }
 
 bool test1callback_called = false;
-CPP_AT_CALLBACK(Test1Callback) {
+CPP_AT_CALLBACK(Test1Callback)
+{
     test1callback_called = true;
     return true;
 }
 
 static const CppAT::ATCommandDef_t const_at_command_list[] = {
-    {
-        .command_buf = "+TEST1",
-        .min_args = 0,
-        .max_args = 2,
-        .help_string_buf = "Doot doot help string.",
-        .callback = Test1Callback
-    },
-    {
-        .command_buf = "+TEST2",
-        .min_args = 1,
-        .help_string_buf = "TEST2 help string."
-    }
-};
-TEST(CppAT, ConstATCommandList) {
+    {.command_buf = "+TEST1",
+     .min_args = 0,
+     .max_args = 2,
+     .help_string_buf = "Doot doot help string.",
+     .callback = Test1Callback},
+    {.command_buf = "+TEST2",
+     .min_args = 1,
+     .help_string_buf = "TEST2 help string."}};
+TEST(CppAT, ConstATCommandList)
+{
     CppAT parser = CppAT(const_at_command_list, 2, true);
-    const CppAT::ATCommandDef_t * command = parser.LookupATCommand("+TEST1");
+    const CppAT::ATCommandDef_t *command = parser.LookupATCommand("+TEST1");
     ASSERT_NE(command, nullptr);
     ASSERT_EQ(command->help_string.compare("Doot doot help string."), 0);
     ASSERT_EQ(command->command.compare("+TEST1"), 0);

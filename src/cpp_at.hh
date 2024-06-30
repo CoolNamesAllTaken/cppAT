@@ -17,7 +17,7 @@ public:
     static const uint16_t kATPrefixLen;
     static const char kATAllowedOpChars[];
     static const uint16_t kHelpStringMaxLen = 200;
-    static const uint16_t kArgMaxLen = 32;
+    static const uint16_t kArgMaxLen = 64;
     static const char kArgDelimiter = ',';
     static const uint16_t kMaxNumArgs = 20;
     static const char kATMessageEndStr[];

@@ -202,6 +202,12 @@ bool CppAT::ParseMessage(std::string_view message)
                 return false;
             }
             uint16_t arg_len = arg_end == npos ? args_string.length() - arg_start : arg_end - arg_start;
+            if (arg_len > kArgMaxLen)
+            {
+                cpp_at_printf("CppAT::Parsemessage: Argument %d is too long, must be <%d characters.\r\n", num_args,
+                              kMaxNumArgs);
+                return false;
+            }
             if (arg_len == 0 && arg_end == npos)
             {
                 // Special case: final argument with zero length, don't count it unless preceeded by a delimiter.
@@ -215,7 +221,7 @@ bool CppAT::ParseMessage(std::string_view message)
                 // else: No trailing argument.
                 break;
             }
-            memcpy(&args_str_buf_list[num_args], &args_string[arg_start], arg_len);
+            strncpy(args_str_buf_list[num_args], &args_string[arg_start], arg_len);
             args_str_buf_list[num_args][arg_len] = '\0'; // make argument safe to process into a string view
             args_list[num_args] = std::string_view(args_str_buf_list[num_args]);
             num_args++;
