@@ -115,7 +115,7 @@ public:
             {
                 // NOTE: This may cause unexpected results if type is unsigned but parsed value is signed!
                 number = static_cast<T>(parsed_int);
-                if (number != parsed_int)
+                if (static_cast<int>(number) != parsed_int)
                 {
                     return false; // Something weird happened, maybe trying to put a signed number into an unsigned
                                   // value?
