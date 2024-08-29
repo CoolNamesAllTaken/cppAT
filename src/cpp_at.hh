@@ -11,7 +11,7 @@
 class CppAT
 {
 public:
-    static const uint16_t kATCommandMaxLen = 16;
+    static const uint16_t kATCommandMaxLen = 32;
     // Initialized in .cc file.
     static const char kATPrefix[];
     static const uint16_t kATPrefixLen;
