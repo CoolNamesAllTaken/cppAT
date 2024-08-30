@@ -134,11 +134,11 @@ TEST(CppAT, RejectMessageWithCommandTooLong)
 {
     // Build a parser that contains a command that is too long.
     CppAT::ATCommandDef_t at_command_list[] = {
-        {.command = "+HIHIHIHIHIHIHIHIHIHITOOLONG"}};
+        {.command = "+HIHIHIHIHIHIHIHIHIHITOOLONGLALALALALALAALALALALAAAA"}};
     CppAT parser = CppAT(at_command_list, sizeof(at_command_list) / sizeof(at_command_list[0]));
     ASSERT_FALSE(parser.is_valid);
 
-    ASSERT_FALSE(parser.ParseMessage("AT+HIHIHIHIHIHIHIHIHIHITOOLONG"));
+    ASSERT_FALSE(parser.ParseMessage("AT+HIHIHIHIHIHIHIHIHIHITOOLONGLALALALALALAALALALALAAAA"));
 }
 
 TEST(CppAT, FailToInitWithHelpStringTooLong)
