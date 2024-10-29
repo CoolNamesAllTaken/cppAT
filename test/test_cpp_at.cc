@@ -334,7 +334,9 @@ TEST(CppAT, PickyOpCallback)
     ASSERT_FALSE(parser.ParseMessage("AT+PICKYOP\r\n"));
 }
 
-std::vector<std::string_view> stored_args;
+// Use real strings here since we can have dynamic memory allocation on the host. Helps ensure that we don't have issues
+// when the args string buffers pass our of scope.
+std::vector<std::string> stored_args;
 char stored_op;
 CPP_AT_CALLBACK(StoreArgsCallback)
 {
@@ -342,7 +344,7 @@ CPP_AT_CALLBACK(StoreArgsCallback)
     stored_op = op;
     for (uint16_t i = 0; i < num_args; i++)
     {
-        stored_args.push_back(args[i]);
+        stored_args.push_back(std::string(args[i]));
     }
     return true;
 }
@@ -397,10 +399,10 @@ TEST(CppAT, AllowBlankArgs)
 
     parser.ParseMessage("AT+STORE=,,5,");
     ASSERT_EQ(stored_args.size(), (size_t)4);
-    ASSERT_STREQ(stored_args[0].data(), "");
-    ASSERT_STREQ(stored_args[1].data(), "");
-    ASSERT_STREQ(stored_args[2].data(), "5");
-    ASSERT_STREQ(stored_args[3].data(), "");
+    EXPECT_STREQ(stored_args[0].data(), "");
+    EXPECT_STREQ(stored_args[1].data(), "");
+    EXPECT_STREQ(stored_args[2].data(), "5");
+    EXPECT_STREQ(stored_args[3].data(), "");
 }
 
 static constexpr float kFloatCloseEnough = 0.00001f;

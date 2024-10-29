@@ -10,7 +10,6 @@ const char CppAT::kATPrefix[] = "AT";
 const uint16_t CppAT::kATPrefixLen = sizeof(CppAT::kATPrefix) - 1; // Remove EOS character.
 const char CppAT::kATAllowedOpChars[] = "? =\r\n";                 // NOTE: these delimit the end of a command!
 const char CppAT::kATMessageEndStr[] = "\r\n";
-const size_t npos = -1; // Since string_view doesn't have it. Used to represent "not found".
 
 /**
  * Public Functions
@@ -201,14 +200,14 @@ bool CppAT::ParseMessage(std::string_view message)
                 cpp_at_printf("CppAT::ParseMessage: Too many arguments.\r\n");
                 return false;
             }
-            uint16_t arg_len = arg_end == npos ? args_string.length() - arg_start : arg_end - arg_start;
+            uint16_t arg_len = arg_end == std::string::npos ? args_string.length() - arg_start : arg_end - arg_start;
             if (arg_len > kArgMaxLen)
             {
                 cpp_at_printf("CppAT::Parsemessage: Argument %d is too long, must be <%d characters.\r\n", num_args,
                               kMaxNumArgs);
                 return false;
             }
-            if (arg_len == 0 && arg_end == npos)
+            if (arg_len == 0 && arg_end == std::string::npos)
             {
                 // Special case: final argument with zero length, don't count it unless preceeded by a delimiter.
                 if (args_string[args_string.length() - 1] == ',')
@@ -226,7 +225,7 @@ bool CppAT::ParseMessage(std::string_view message)
             args_list[num_args] = std::string_view(args_str_buf_list[num_args]);
             num_args++;
             arg_start = arg_end + 1;
-        } while (arg_end != npos);
+        } while (arg_end != std::string::npos);
 
         if ((num_args < def->min_args) || (num_args > def->max_args))
         {
