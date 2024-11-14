@@ -5,21 +5,21 @@
 #include <functional>
 #include <string_view>
 #include <vector>
-
+#include "cpp_at_settings.hh"
 #include "stdint.h"
 
 class CppAT
 {
 public:
-    static const uint16_t kATCommandMaxLen = 32;
+    static const uint16_t kATCommandMaxLen = CPP_AT_COMMAND_MAX_LEN;
     // Initialized in .cc file.
     static const char kATPrefix[];
     static const uint16_t kATPrefixLen;
     static const char kATAllowedOpChars[];
-    static const uint16_t kHelpStringMaxLen = 200;
-    static const uint16_t kArgMaxLen = 64;
+    static const uint16_t kHelpStringMaxLen = CPP_AT_HELP_STR_MAX_LEN;
+    static const uint16_t kArgMaxLen = CPP_AT_ARG_MAX_LEN;
     static const char kArgDelimiter = ',';
-    static const uint16_t kMaxNumArgs = 20;
+    static const uint16_t kMaxNumArgs = CPP_AT_MAX_NUM_ARGS;
     static const char kATMessageEndStr[];
 
     struct ATCommandDef_t
