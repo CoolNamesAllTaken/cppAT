@@ -203,8 +203,8 @@ bool CppAT::ParseMessage(std::string_view message)
             uint16_t arg_len = arg_end == std::string::npos ? args_string.length() - arg_start : arg_end - arg_start;
             if (arg_len > kArgMaxLen)
             {
-                cpp_at_printf("CppAT::Parsemessage: Argument %d is too long, must be <%d characters.\r\n", num_args,
-                              kMaxNumArgs);
+                cpp_at_printf("CppAT::Parsemessage: Argument %d is too long, must be <=%d characters.\r\n", num_args,
+                              kArgMaxLen);
                 return false;
             }
             if (arg_len == 0 && arg_end == std::string::npos)
