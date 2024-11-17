@@ -265,10 +265,10 @@ TEST(CppAT, RejectMessageWithArgTooLong)
 {
     CppAT parser = BuildExampleParser1();
 
-    // 64 characters exactly.
-    ASSERT_TRUE(parser.ParseMessage("AT+TEST=aasdgasgasfgasfgasfghasfhasdfhasdthaszfhaszdfhasdzfhasdfzbdgasdg"));
+    // 128 characters exactly.
+    ASSERT_TRUE(parser.ParseMessage("AT+TEST=aasdgasgasfgasfgasfghasfhasdfhasdthaszfhaszdfhasdzfhasdfzbdgasdgaasdgasgasfgasfgasfghasfhasdfhasdthaszfhaszdfhasdzfhasdfzbdgasdg"));
     // >64 characters.
-    ASSERT_FALSE(parser.ParseMessage("AT+TEST=aasdgasgasfgasfgasfghasfhasdfhasdthaszfhaszdfhasdzfhasdfzbdgasdgasd"));
+    ASSERT_FALSE(parser.ParseMessage("AT+TEST=aasdgasgasfgasfgasfghasfhasdfhasdthaszfhaszdfhasdzfhasdfzbdgasdgaasdgasgasfgasfgasfghasfhasdfhasdthaszfhaszdfhasdzfhasdfzbdgasdgh"));
 }
 
 /**
