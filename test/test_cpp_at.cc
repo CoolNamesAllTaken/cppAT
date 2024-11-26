@@ -468,8 +468,8 @@ TEST(CppAT, ArgToNumUint32_t)
     // Test nominal positive value for uint16_t.
     ASSERT_TRUE(CppAT::ArgToNum(std::string_view("1234567"), num));
     ASSERT_EQ(num, (uint32_t)1234567);
-    // Negative integer should work since its overflow value fits into a uint32_t.
-    ASSERT_TRUE(CppAT::ArgToNum(std::string_view("-1234"), num));
+    // Negative integer should fail since it needs a signed value.
+    ASSERT_FALSE(CppAT::ArgToNum(std::string_view("-1234"), num));
 
     // Test uint16_t with crap afterwards. ArgToNum should barf!
     ASSERT_FALSE(CppAT::ArgToNum(std::string_view("1234hihi"), num));

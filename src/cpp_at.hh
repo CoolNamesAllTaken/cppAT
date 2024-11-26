@@ -5,6 +5,7 @@
 #include <functional>
 #include <string_view>
 #include <vector>
+#include <type_traits> // For checking tyupe of a template.
 #include "cpp_at_settings.hh"
 #include "stdint.h"
 
@@ -105,35 +106,63 @@ public:
         char *end_ptr;
         const char *arg_ptr = arg.data();
 
-        // Parse Integer
-        int parsed_int = strtol(arg_ptr, &end_ptr, base);
+        // Remove leading whitespace.
+        while (std::isspace(*arg_ptr))
+        {
+            ++arg_ptr;
+        }
+
+        // Try parsing integer.
+        bool arg_is_signed = false;
+        int32_t parsed_int;
+        uint32_t parsed_uint;
+        if (*arg_ptr == '-')
+        {
+            // Parse signed integer.
+            arg_is_signed = true;
+            if (!std::is_signed_v<T>)
+            {
+                return false; // Can't store negative value in unsigned variable.
+            }
+            parsed_int = strtol(arg_ptr, &end_ptr, base);
+        }
+        else
+        {
+            // Parse unsigned integer.
+            parsed_uint = strtoul(arg_ptr, &end_ptr, base);
+        }
         if (end_ptr != arg_ptr)
         {
             while (std::isspace(*end_ptr))
+            {
                 ++end_ptr;
+            }
             if (*end_ptr == '\0')
             {
                 // NOTE: This may cause unexpected results if type is unsigned but parsed value is signed!
-                number = static_cast<T>(parsed_int);
-                if (static_cast<int>(number) != parsed_int)
+                number = static_cast<T>(arg_is_signed ? parsed_int : parsed_uint);
+                if ((arg_is_signed && static_cast<int32_t>(number) != parsed_int)       // Overflowed signed integer.
+                    || (!arg_is_signed && static_cast<uint32_t>(number) != parsed_uint) // Overflowed unsigned integer.
+                )
                 {
-                    return false; // Something weird happened, maybe trying to put a signed number into an unsigned
-                                  // value?
+                    // Value overflowed the bounds of number.
+                    return false;
                 }
                 return true;
             }
-            // else: There are numbers or text after the decimal, try parsing float.
+            else
+            {
+                // There are numbers or text after the decimal, try parsing float.
+                float parsed_float = strtof(arg_ptr, &end_ptr);
+                if (end_ptr != arg_ptr && *end_ptr == '\0')
+                {
+                    number = static_cast<T>(parsed_float);
+                    return true;
+                }
+            }
         }
-
-        // Parse Float
-        float parsed_float = strtof(arg_ptr, &end_ptr);
-        if (end_ptr != arg_ptr && *end_ptr == '\0')
-        {
-            number = static_cast<T>(parsed_float);
-            return true;
-        }
-
-        return false; // Failed to parse.
+        // Arg is blank or failed to parse.
+        return false;
     }
 
     bool ATHelpCallback(const ATCommandDef_t &def, char op, const std::string_view args[], uint16_t num_args);
