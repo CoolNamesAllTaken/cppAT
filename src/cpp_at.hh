@@ -12,15 +12,15 @@
 class CppAT
 {
 public:
-    static const uint16_t kATCommandMaxLen = CPP_AT_COMMAND_MAX_LEN;
+    static constexpr uint16_t kATCommandMaxLen = CPP_AT_COMMAND_MAX_LEN;
     // Initialized in .cc file.
     static const char kATPrefix[];
     static const uint16_t kATPrefixLen;
     static const char kATAllowedOpChars[];
-    static const uint16_t kHelpStringMaxLen = CPP_AT_HELP_STR_MAX_LEN;
-    static const uint16_t kArgMaxLen = CPP_AT_ARG_MAX_LEN;
-    static const char kArgDelimiter = ',';
-    static const uint16_t kMaxNumArgs = CPP_AT_MAX_NUM_ARGS;
+    static constexpr uint16_t kHelpStringMaxLen = CPP_AT_HELP_STR_MAX_LEN;
+    static constexpr uint16_t kArgMaxLen = CPP_AT_ARG_MAX_LEN;
+    static constexpr char kArgDelimiter = ',';
+    static constexpr uint16_t kMaxNumArgs = CPP_AT_MAX_NUM_ARGS;
     static const char kATMessageEndStr[];
 
     struct ATCommandDef_t
