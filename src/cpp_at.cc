@@ -240,6 +240,10 @@ bool CppAT::ParseMessage(std::string_view message)
             bool result = def->callback(*def, op, args_list, num_args);
             if (!result)
             {
+                if (op == '\0')
+                {
+                    op = '_'; // Replace null op with underscore for printing.
+                }
                 cpp_at_printf("CppAT::ParseMessage: Call to AT Command %.*s with op '%c' and args %.*s failed.\r\n",
                               command.length(), command.data(), op, args_string.length(), args_string.data());
                 return false;
