@@ -244,8 +244,8 @@ bool CppAT::ParseMessage(std::string_view message)
                 {
                     op = '_'; // Replace null op with underscore for printing.
                 }
-                cpp_at_printf("CppAT::ParseMessage: Call to AT Command %.*s with op '%c' and args %.*s failed.\r\n",
-                              command.length(), command.data(), op, args_string.length(), args_string.data());
+                // cpp_at_printf("CppAT::ParseMessage: Call to AT Command %.*s with op '%c' and args %.*s failed.\r\n",
+                //               command.length(), command.data(), op, args_string.length(), args_string.data());
                 return false;
             }
         }
