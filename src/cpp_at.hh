@@ -8,6 +8,7 @@
 #include <type_traits> // For checking tyupe of a template.
 #include "cpp_at_settings.hh"
 #include "stdint.h"
+#include "stdlib.h" // For strtol, strtoul, strtof.
 
 class CppAT
 {
